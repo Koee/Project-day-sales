@@ -7,6 +7,12 @@ export class CartPage extends BasePage {
   }
 
   async selectProduct(): Promise<void> {
+    const cartItem = this.page.locator('.cart__item').first();
+    const emptyCart = this.page.getByText(/chưa có sản phẩm nào trong giỏ hàng/i).first();
+
+    await expect(cartItem.or(emptyCart)).toBeVisible({ timeout: 5_000 });
+    await expect(emptyCart).toBeHidden({ timeout: 1_000 });
+
     const checkbox = this.page
       .getByRole('checkbox')
       .first();
@@ -16,9 +22,9 @@ export class CartPage extends BasePage {
       return;
     }
 
-    // TODO: Inspect cart selection control with Playwright MCP if it is a custom checkbox.
+    // Day Sales hides the native checkbox and exposes the visible control as its label.
     await this.page
-      .locator('[data-testid*="select"], .checkbox, input[type="checkbox"]')
+      .locator('.cart__item .checkbox-container .label-checkbox')
       .first()
       .click();
   }

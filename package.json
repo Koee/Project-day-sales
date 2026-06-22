@@ -5,17 +5,26 @@
   "description": "Playwright Test automation project for Day Sales staging.",
   "scripts": {
     "test": "playwright test",
+    "test:guest-order": "playwright test checkout/guest-order.spec.ts --grep \"mua hàng không login\"",
+    "test:guest-order:list": "playwright test checkout/guest-order.spec.ts --grep \"mua hàng không login\" --list",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
     "install:browsers": "playwright install --with-deps chromium",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "perf:check": "k6 version",
+    "perf:typecheck": "tsc --noEmit -p tsconfig.k6.json",
+    "perf:build": "esbuild performance/k6/src/smoke-pages.ts performance/k6/src/order-requests.ts --bundle --outdir=performance/k6/dist --platform=browser --format=esm --target=es2020 --external:k6 --external:k6/*",
+    "perf:smoke": "npm run perf:typecheck && npm run perf:build && node -e \"require('fs').mkdirSync('performance/k6/reports',{recursive:true})\" && k6 run performance/k6/dist/smoke-pages.js",
+    "perf:orders": "npm run perf:typecheck && npm run perf:build && node -e \"require('fs').mkdirSync('performance/k6/reports',{recursive:true})\" && k6 run performance/k6/dist/order-requests.js"
   },
   "devDependencies": {
     "@playwright/mcp": "latest",
     "@playwright/test": "latest",
+    "@types/k6": "latest",
     "@types/node": "latest",
     "dotenv": "latest",
+    "esbuild": "latest",
     "typescript": "latest"
   }
 }

@@ -11,6 +11,10 @@ export class StorePage extends BasePage {
     await this.goto(urls.store11);
   }
 
+  async openProductWithSalesChannel(): Promise<void> {
+    await this.goto(urls.productWithSalesChannel);
+  }
+
   async searchProduct(productName: string): Promise<void> {
     const searchInput = this.page
       .getByPlaceholder(/tìm kiếm|search|nhập tên sản phẩm/i)
@@ -24,22 +28,34 @@ export class StorePage extends BasePage {
   }
 
   async addProductToCart(productName: string): Promise<void> {
+    const detailAddButton = this.page
+      .getByRole('button', { name: /thêm vào giỏ hàng|add to cart/i })
+      .first();
+
+    if (await detailAddButton.isVisible().catch(() => false)) {
+      await detailAddButton.click();
+      await expect(this.page.locator('a.btn-cart:visible').first()).toContainText(/[1-9]/);
+      return;
+    }
+
     const productCard = await this.findProductCard(productName);
     const addButton = productCard
       .getByRole('button', { name: /thêm.*giỏ|add.*cart|mua/i })
       .first();
 
-    // TODO: Inspect with Playwright MCP if Day Sales uses an icon-only add-to-cart control.
     if (await addButton.isVisible().catch(() => false)) {
       await addButton.click();
+      await expect(this.page.locator('a.btn-cart:visible').first()).toContainText(/[1-9]/);
       return;
     }
 
-    await productCard.click();
-    await this.page
-      .getByRole('button', { name: /thêm.*giỏ|add.*cart|mua/i })
+    // Day Sales currently renders add-to-cart as an icon-only custom control.
+    await productCard
+      .locator('.btn-qty .qty-right:has(.icon-add-circle), .btn-qty .icon-add-circle')
       .first()
       .click();
+
+    await expect(this.page.locator('a.btn-cart:visible').first()).toContainText(/[1-9]/);
   }
 
   async goToCart(): Promise<void> {
@@ -60,7 +76,9 @@ export class StorePage extends BasePage {
   private async findProductCard(productName: string): Promise<Locator> {
     const namedProduct = this.page
       .getByText(productName, { exact: false })
-      .locator('xpath=ancestor::*[self::article or self::li or self::div][1]');
+      .locator(
+        'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " product-item ")][1]'
+      );
 
     if (await namedProduct.first().isVisible().catch(() => false)) {
       return namedProduct.first();
