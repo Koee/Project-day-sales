@@ -16,7 +16,7 @@
 - Create: `package.json`
 - Create: `tsconfig.json`
 - Create: `playwright.config.ts`
-- Create: `.env.example`
+- Create: `config/.env`
 
 - [x] Add Playwright Test, TypeScript, dotenv and official Playwright MCP dependencies.
 - [x] Configure chromium, baseURL, list/html reporters, staging timeouts and failure artifacts.
@@ -27,12 +27,11 @@
 - Create: `config/urls.ts`
 - Create: `config/env.ts`
 - Create: `fixtures/test-data.ts`
-- Create: `utils/locator.helper.ts`
 - Create: `utils/wait.helper.ts`
 
 - [x] Centralize URLs and env.
 - [x] Keep guest order data outside specs.
-- [x] Add minimal reusable wait and locator helpers.
+- [x] Add minimal reusable wait helper.
 
 ### Task 3: Add POM and First Test
 
@@ -53,7 +52,7 @@
 **Files:**
 - Create: `.vscode/mcp.json`
 - Create: `.github/workflows/playwright.yml`
-- Create: `agents/*.md`
+- Create: `.agents/agent-roles.md`
 - Create: `README.md`
 
 - [x] Configure `@playwright/mcp`.

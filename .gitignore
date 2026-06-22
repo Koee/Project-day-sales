@@ -1,7 +1,11 @@
 node_modules/
 playwright-report/
 test-results/
+report/
+performance/k6/dist/
+performance/k6/reports/
 .env
+config/.env
 .DS_Store
 npm-debug.log*
 *.log

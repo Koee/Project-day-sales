@@ -9,8 +9,7 @@ export async function muaHangKhongLogin(page: Page): Promise<void> {
   const cartPage = new CartPage(page);
   const checkoutPage = new CheckoutPage(page);
 
-  await storePage.openStore11();
-  await storePage.searchProduct(products.chaCaKg);
+  await storePage.openProductWithSalesChannel();
   await storePage.addProductToCart(products.chaCaKg);
   await storePage.goToCart();
 
@@ -19,4 +18,7 @@ export async function muaHangKhongLogin(page: Page): Promise<void> {
 
   await checkoutPage.openAddressForm();
   await checkoutPage.fillDeliveryAddress(guestDeliveryAddress);
+  await checkoutPage.completeAddressForm();
+  await checkoutPage.changeShippingUnit();
+  await checkoutPage.placeOrderAndWaitForSuccess();
 }

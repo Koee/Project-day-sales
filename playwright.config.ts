@@ -3,6 +3,8 @@ import { env } from './config/env';
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: env.testSpec ? [env.testSpec] : undefined,
+  grep: env.testGrep ? new RegExp(env.testGrep, 'i') : undefined,
   timeout: 60_000,
   expect: {
     timeout: 10_000

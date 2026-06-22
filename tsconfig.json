@@ -10,7 +10,7 @@
     "noEmit": true
   },
   "include": [
-    "agents/**/*.md",
+    ".agents/**/*.md",
     "config/**/*.ts",
     "fixtures/**/*.ts",
     "pages/**/*.ts",
