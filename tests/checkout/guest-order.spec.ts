@@ -7,7 +7,7 @@ test.describe('Checkout', () => {
     await saveTestResultReport(page, testInfo);
   });
 
-  test('mua hàng không login', async ({ page }) => {
+  test('should place order successfully when guest user completes checkout flow @smoke @checkout', async ({ page }) => {
     await muaHangKhongLogin(page);
   });
 });

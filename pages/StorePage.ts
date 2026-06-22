@@ -34,7 +34,10 @@ export class StorePage extends BasePage {
 
     if (await detailAddButton.isVisible().catch(() => false)) {
       await detailAddButton.click();
-      await expect(this.page.locator('a.btn-cart:visible').first()).toContainText(/[1-9]/);
+      await expect(
+        this.page.locator('a.btn-cart:visible').first(),
+        'Cart count should show at least 1 item after adding product from detail page'
+      ).toContainText(/[1-9]/);
       return;
     }
 
@@ -45,7 +48,10 @@ export class StorePage extends BasePage {
 
     if (await addButton.isVisible().catch(() => false)) {
       await addButton.click();
-      await expect(this.page.locator('a.btn-cart:visible').first()).toContainText(/[1-9]/);
+      await expect(
+        this.page.locator('a.btn-cart:visible').first(),
+        'Cart count should show at least 1 item after adding product from product card'
+      ).toContainText(/[1-9]/);
       return;
     }
 
@@ -55,7 +61,10 @@ export class StorePage extends BasePage {
       .first()
       .click();
 
-    await expect(this.page.locator('a.btn-cart:visible').first()).toContainText(/[1-9]/);
+    await expect(
+      this.page.locator('a.btn-cart:visible').first(),
+      'Cart count should show at least 1 item after clicking icon add-to-cart'
+    ).toContainText(/[1-9]/);
   }
 
   async goToCart(): Promise<void> {
@@ -70,7 +79,7 @@ export class StorePage extends BasePage {
       await this.page.goto(urls.cart);
     }
 
-    await expect(this.page).toHaveURL(new RegExp(urls.cart, 'i'));
+    await expect(this.page, 'Page URL should match cart URL after navigating to cart').toHaveURL(new RegExp(urls.cart, 'i'));
   }
 
   private async findProductCard(productName: string): Promise<Locator> {

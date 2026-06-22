@@ -35,9 +35,9 @@ export class CheckoutPage extends BasePage {
     const dialog = this.currentDialog();
     const doneButton = this.doneButton(dialog);
 
-    await expect(doneButton).toBeEnabled();
+    await expect(doneButton, 'Done button should be enabled before completing address form').toBeEnabled();
     await doneButton.click();
-    await expect(dialog).toBeHidden();
+    await expect(dialog, 'Address dialog should close/hide after clicking done').toBeHidden();
   }
 
   async changeShippingUnit(): Promise<void> {
@@ -46,7 +46,7 @@ export class CheckoutPage extends BasePage {
     await this.changeShippingUnitControl().click();
 
     const dialog = this.currentDialog();
-    await expect(dialog).toBeVisible();
+    await expect(dialog, 'Shipping unit dialog should be visible after clicking change shipping unit').toBeVisible();
 
     const shopShipping = this.shopShippingOption(dialog);
     const selectedShopShipping = await shopShipping.isVisible().catch(() => false);
@@ -57,21 +57,27 @@ export class CheckoutPage extends BasePage {
     }
 
     const doneButton = this.doneButton(dialog);
-    await expect(doneButton).toBeEnabled();
+    await expect(doneButton, 'Done button should be enabled before completing shipping unit change').toBeEnabled();
     await doneButton.click();
-    await expect(dialog).toBeHidden();
+    await expect(dialog, 'Shipping dialog should close/hide after clicking done').toBeHidden();
 
     if (selectedShopShipping) {
-      await expect(shippingSummary).toContainText(/shop( vận chuyển)?/i);
+      await expect(
+        shippingSummary,
+        'Shipping summary should show shop shipping after selecting shop shipping option'
+      ).toContainText(/shop( vận chuyển)?/i);
     } else {
-      await expect(shippingSummary).toBeVisible();
+      await expect(shippingSummary, 'Shipping summary should remain visible after changing shipping unit').toBeVisible();
     }
   }
 
   async placeOrderAndWaitForSuccess(): Promise<void> {
     await this.placeOrderButton().click();
 
-    await expect(this.orderSuccessMessage()).toBeVisible();
+    await expect(
+      this.orderSuccessMessage(),
+      'Order success message should appear after placing order'
+    ).toBeVisible();
   }
 
   private addressFormOpenControl(): Locator {
@@ -90,6 +96,7 @@ export class CheckoutPage extends BasePage {
   }
 
   private changeShippingUnitControl(): Locator {
+    // TODO: Replace this CSS fallback with an accessible locator/data-testid after DOM inspection.
     return this.page
       .locator('.content__middle-row_left .color-primary.cursor-pointer')
       .filter({ hasText: /thay đổi đơn vị vận chuyển|thay đổi/i })
@@ -101,6 +108,7 @@ export class CheckoutPage extends BasePage {
   }
 
   private shippingServiceItems(dialog: Locator): Locator {
+    // TODO: Replace this CSS fallback with an accessible locator/data-testid after DOM inspection.
     return dialog.locator('.services-list__item');
   }
 
@@ -129,7 +137,15 @@ export class CheckoutPage extends BasePage {
   private async fillAddressTextField(field: AddressField, value: string): Promise<void> {
     const textField = this.addressTextField(field);
     if (await textField.isVisible().catch(() => false)) {
-      await textField.fill(value);
+      try {
+        await textField.fill(value);
+      } catch (e) {
+        console.warn(
+          `[CheckoutPage] fillAddressTextField: fill() failed for "${field}" with accessible locator, using fallback index:`,
+          e
+        );
+        await this.currentDialog().locator('input:visible, textarea:visible').nth(this.getAddressTextFallbackIndex(field)).fill(value);
+      }
       return;
     }
 
@@ -147,7 +163,11 @@ export class CheckoutPage extends BasePage {
 
     if (await fieldControl.isVisible().catch(() => false)) {
       await fieldControl.click();
-      await fieldControl.fill(value).catch(() => undefined);
+      try {
+        await fieldControl.fill(value);
+      } catch (e) {
+        console.warn(`[CheckoutPage] selectAddressOption: fill() failed for "${field}", proceeding to select option anyway:`, e);
+      }
       await this.page.getByRole('option', { name: new RegExp(value, 'i') }).or(this.page.getByText(value)).first().click();
       return;
     }
@@ -161,7 +181,7 @@ export class CheckoutPage extends BasePage {
     }
 
     const customSelect = dialog.locator('.select-box:visible').nth(this.getAddressSelectFallbackIndex(field));
-    await expect(customSelect).toBeVisible();
+    await expect(customSelect, `Address custom select fallback should be visible for "${field}"`).toBeVisible();
     await customSelect.click();
     await this.selectVisibleDropdownOption(value);
   }
@@ -172,7 +192,7 @@ export class CheckoutPage extends BasePage {
       .or(this.page.locator('.select-box__item:visible', { hasText: value }))
       .first();
 
-    await expect(option).toBeVisible();
+    await expect(option, `Dropdown option "${value}" should be visible before selection`).toBeVisible();
     await option.click();
   }
 
@@ -199,6 +219,7 @@ export class CheckoutPage extends BasePage {
   private async selectShippingOption(option: Locator): Promise<void> {
     const nativeControl = option.locator('input[type="checkbox"], input[type="radio"]').first();
     if (await nativeControl.count()) {
+      // TODO: Replace evaluate workaround after the shipping option exposes a stable accessible control.
       await nativeControl.evaluate((element) => {
         const input = element as HTMLInputElement;
         input.checked = true;
