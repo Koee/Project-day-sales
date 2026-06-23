@@ -19,6 +19,24 @@ export class CheckoutPage extends BasePage {
     super(page);
   }
 
+  async expectCheckoutLayoutVisible(): Promise<void> {
+    await expect(this.page, 'Checkout page should stay on checkout URL').toHaveURL(/shoppingCheckout/i);
+    await expect(this.page.locator('body'), 'Checkout should show order or address content').toContainText(/Đặt hàng|Thanh toán|Địa chỉ|Mua hàng và thanh toán|COD|checkout/i);
+    await expect(this.placeOrderButton(), 'Checkout place order button should be visible').toBeVisible();
+  }
+
+  async expectAddressFieldsVisible(): Promise<void> {
+    const openControl = this.addressFormOpenControl();
+
+    if (await openControl.isVisible().catch(() => false)) {
+      await openControl.click();
+    }
+
+    const dialog = this.currentDialog();
+    await expect(dialog.or(this.page.locator('body')).first(), 'Checkout address area should be visible').toBeVisible();
+    await expect(this.page.locator('body'), 'Checkout should show recipient or phone address fields').toContainText(/tÃªn|sá»‘ Ä‘iá»‡n thoáº¡i|phone|Ä‘á»‹a chá»‰|address/i);
+  }
+
   // Mở form nhập địa chỉ nhận hàng.
   async openAddressForm(): Promise<void> {
     await this.addressFormOpenControl().click();
@@ -112,6 +130,63 @@ export class CheckoutPage extends BasePage {
     ).toBeVisible();
   }
 
+  async placeOrderWithMissingPhoneAndExpectValidation(address: DeliveryAddress): Promise<boolean> {
+    const openControl = this.addressFormOpenControl();
+
+    if (!(await openControl.isVisible().catch(() => false))) {
+      return false;
+    }
+
+    await openControl.click();
+    await this.fillAddressTextField('recipientName', address.recipientName);
+    await this.fillAddressTextField('address', address.address);
+
+    const dialog = this.currentDialog();
+    const doneButton = this.doneButton(dialog);
+    await doneButton.click();
+    await expect(dialog.or(this.page.locator('body')).first(), 'Checkout should keep address dialog/page visible after missing phone').toBeVisible();
+    await expect(this.page.locator('body'), 'Checkout should show validation when phone is missing').toContainText(/sá»‘ Ä‘iá»‡n thoáº¡i|phone|báº¯t buá»™c|required|khÃ´ng há»£p lá»‡/i);
+    return true;
+  }
+
+  async expectInvalidPhoneValidation(address: DeliveryAddress, invalidPhone: string): Promise<boolean> {
+    const openControl = this.addressFormOpenControl();
+
+    if (!(await openControl.isVisible().catch(() => false))) {
+      return false;
+    }
+
+    await openControl.click();
+    await this.fillAddressTextField('recipientName', address.recipientName);
+    await this.fillAddressTextField('phone', invalidPhone);
+    await this.fillAddressTextField('address', address.address);
+
+    const dialog = this.currentDialog();
+    await this.doneButton(dialog).click();
+    await expect(this.page.locator('body'), 'Checkout should show invalid phone validation').toContainText(/sá»‘ Ä‘iá»‡n thoáº¡i|phone|khÃ´ng há»£p lá»‡|invalid/i);
+    return true;
+  }
+
+  async captureOrderSummary(): Promise<string> {
+    return (await this.page.locator('.order-summary, [class*="summary"], [class*="checkout"]').filter({ hasText: /[0-9]/ }).first().innerText()).trim();
+  }
+
+  async goBackToCart(): Promise<boolean> {
+    const backToCart = this.page
+      .getByRole('link', { name: /quay láº¡i|giá» hÃ ng|cart|back/i })
+      .or(this.page.getByRole('button', { name: /quay láº¡i|giá» hÃ ng|cart|back/i }))
+      .or(this.page.locator('a[href*="shoppingCart"]'))
+      .first();
+
+    if (!(await backToCart.isVisible().catch(() => false))) {
+      return false;
+    }
+
+    await backToCart.click();
+    await expect(this.page, 'Back to cart should navigate to shopping cart').toHaveURL(/shoppingCart/i);
+    return true;
+  }
+
   // Lấy control dùng để mở form địa chỉ nhận hàng.
   private addressFormOpenControl(): Locator {
     return this.page
@@ -162,7 +237,7 @@ export class CheckoutPage extends BasePage {
 
   // Lấy nút đồng ý đặt hàng.
   private placeOrderButton(): Locator {
-    return this.page.getByRole('button', { name: /đồng ý.*đặt hàng|đặt hàng/i }).first();
+    return this.page.getByRole('button', { name: /đồng ý.*đặt hàng|đặt hàng|Đồng ý.*Đặt hàng|Đặt hàng/i }).first();
   }
 
   // Lấy thông báo đặt hàng thành công.

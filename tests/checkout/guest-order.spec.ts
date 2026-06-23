@@ -9,7 +9,7 @@ test.describe('Checkout', () => {
   });
 
   // Kiểm tra flow đặt hàng thành công khi không đăng nhập.
-  test('should place order successfully when guest user completes checkout flow @smoke @checkout', async ({ page }) => {
+  test('TC-GUEST-ORDER-001 should place order successfully when guest user completes checkout flow @smoke @checkout', async ({ page }) => {
     await muaHangKhongLogin(page);
   });
 });

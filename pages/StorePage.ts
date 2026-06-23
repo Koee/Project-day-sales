@@ -13,6 +13,55 @@ export class StorePage extends BasePage {
     await this.goto(urls.store11);
   }
 
+  async openStore11ProductList(): Promise<void> {
+    await this.page.goto(`${urls.store11}/product`, { waitUntil: 'domcontentloaded' });
+    await this.page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => {
+      // Staging product listing may keep background requests open.
+    });
+  }
+
+  async expectStoreLayoutVisible(): Promise<void> {
+    await expect(this.page, 'Store page should stay on store or product listing URL').toHaveURL(/\/store\/11|\/product/i);
+    await expect(this.header(), 'Store header should be visible').toBeVisible();
+    await expect(this.productListSignal(), 'Store product content should be visible').toBeVisible();
+    await expect(this.footer(), 'Store footer should be visible').toBeVisible();
+  }
+
+  async expectHeaderVisible(): Promise<void> {
+    await expect(this.headerLogo(), 'Header logo should be visible').toBeVisible();
+    await expect(this.cartEntry(), 'Cart entry should be visible in header').toBeVisible();
+    await expect(this.loginOrUserEntry(), 'Header should show login or user entry').toBeVisible();
+  }
+
+  async expectMobileLayout(): Promise<void> {
+    await expect(this.header(), 'Mobile header should be visible').toBeVisible();
+    await expect(this.productListSignal(), 'Mobile product content should be visible').toBeVisible();
+
+    const hasHorizontalOverflow = await this.page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(hasHorizontalOverflow, 'Mobile store should not have horizontal overflow').toBe(false);
+  }
+
+  async expectFirstProductCardVisible(): Promise<void> {
+    const productCard = this.firstProductCard();
+
+    await expect(productCard, 'First product card should be visible').toBeVisible();
+    await expect(productCard.locator('img').first(), 'First product card image should be visible').toBeVisible();
+    await expect(this.firstProductName(), 'First product name should be visible').toBeVisible();
+    await expect(productCard, 'First product card should show a price or reward value').toContainText(/₫|cad|Ä‘iá»ƒm|[0-9][0-9.,]*/i);
+  }
+
+  async expectProductImagesLoaded(): Promise<void> {
+    const images = this.page.locator('main img:visible, .product-item img:visible, img[alt*="Thumbnail"]:visible');
+    const imageCount = await images.count();
+
+    expect(imageCount, 'Store should render at least one visible product image').toBeGreaterThan(0);
+
+    for (let index = 0; index < Math.min(imageCount, 10); index += 1) {
+      const naturalWidth = await images.nth(index).evaluate((image) => (image as HTMLImageElement).naturalWidth);
+      expect(naturalWidth, `Product image ${index + 1} should not be broken`).toBeGreaterThan(0);
+    }
+  }
+
   // Mở trang chi tiết sản phẩm có sales channel.
   async openProductWithSalesChannel(): Promise<void> {
     await this.goto(urls.productWithSalesChannel);
@@ -32,6 +81,35 @@ export class StorePage extends BasePage {
   }
 
   // Thêm sản phẩm vào giỏ từ trang chi tiết hoặc card sản phẩm.
+  async hasSearchInput(): Promise<boolean> {
+    return await this.page
+      .getByPlaceholder(/tÃ¬m kiáº¿m|search|nháº­p tÃªn sáº£n pháº©m|nháº­p/i)
+      .first()
+      .isVisible()
+      .catch(() => false);
+  }
+
+  async expectSearchResult(productName: string): Promise<void> {
+    await expect(this.page.getByText(productName, { exact: false }).first(), 'Search result should contain product name').toBeVisible();
+  }
+
+  async openFirstProductDetail(): Promise<void> {
+    const productLink = this.firstProductLink();
+
+    await expect(productLink, 'First product detail link should be visible').toBeVisible();
+    await productLink.click();
+    await this.page.waitForLoadState('domcontentloaded');
+  }
+
+  async expectProductDetailVisible(): Promise<void> {
+    await expect(this.page, 'Product detail should open product URL').toHaveURL(/\.html|\/product\//i);
+    await expect(this.page.locator('body'), 'Product detail should show product and price content').toContainText(/₫|cad|Ä‘iá»ƒm|giÃ¡|price/i);
+  }
+
+  async expectCartBadgeVisible(): Promise<void> {
+    await expect(this.page.locator('a.btn-cart:visible, a[href*="shoppingCart"]:visible').first(), 'Cart badge/link should be visible').toContainText(/[1-9]/);
+  }
+
   async addProductToCart(productName: string): Promise<void> {
     const detailAddButton = this.page
       .getByRole('button', { name: /thêm vào giỏ hàng|add to cart/i })
@@ -104,5 +182,53 @@ export class StorePage extends BasePage {
     return this.page
       .locator('[data-testid*="product"], .product-item, .product-card, article, li')
       .first();
+  }
+
+  private header(): Locator {
+    return this.page.locator('header, nav, .header, #header, [role="banner"]').first();
+  }
+
+  private footer(): Locator {
+    return this.page.locator('footer, .footer, [role="contentinfo"]').first();
+  }
+
+  private headerLogo(): Locator {
+    return this.page
+      .getByRole('link', { name: /brandLogo|logo/i })
+      .or(this.page.locator('img[alt*="logo" i], header img, nav img').first())
+      .first();
+  }
+
+  private cartEntry(): Locator {
+    return this.page
+      .getByRole('link', { name: /giá» hÃ ng|cart/i })
+      .or(this.page.locator('a[href*="shoppingCart"], a.btn-cart'))
+      .first();
+  }
+
+  private loginOrUserEntry(): Locator {
+    return this.page
+      .locator('a[href*="/user/profile"]:visible, #usercol:visible, #user-col:visible, .header-block--user:visible')
+      .or(this.page.getByRole('link', { name: /Ä‘Äƒng nháº­p|đăng nhập|login|tÃ´i|tôi|profile/i }))
+      .or(this.page.getByRole('button', { name: /Ä‘Äƒng nháº­p|đăng nhập|login|tÃ´i|tôi|profile/i }))
+      .first();
+  }
+
+  private productListSignal(): Locator {
+    return this.page
+      .locator('.product-item, .product-card, [data-testid*="product"], main a[href*=".html"], main a[href*="/product/"]')
+      .first();
+  }
+
+  private firstProductCard(): Locator {
+    return this.page.locator('.product-item, .product-card, [data-testid*="product"], article, main li').first();
+  }
+
+  private firstProductName(): Locator {
+    return this.page.locator('.product-item strong, .product-card strong, main a[href*=".html"] strong, main a[href*="/product/"] strong').first();
+  }
+
+  private firstProductLink(): Locator {
+    return this.page.locator('main a[href*=".html"], main a[href*="/product/"]').first();
   }
 }
