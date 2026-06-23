@@ -11,6 +11,7 @@ export const products = {
   chaCaKg: 'Chả cá KG'
 } as const;
 
+// Tạo dữ liệu địa chỉ nhận hàng ngẫu nhiên cho guest checkout.
 export function createGuestDeliveryAddress(): DeliveryAddress {
   const ts = Date.now();
   const suffix = `${ts}${Math.random().toString(36).slice(2, 8)}`;

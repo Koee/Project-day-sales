@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 import { env } from './config/env';
 
 export default defineConfig({
@@ -29,8 +29,11 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome'],
-        browserName: 'chromium'
+        browserName: 'chromium',
+        viewport: null,
+        launchOptions: {
+          args: ['--start-maximized']
+        }
       }
     }
   ]

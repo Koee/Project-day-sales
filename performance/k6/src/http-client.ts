@@ -8,6 +8,7 @@ export const pageFailureRate = new Rate('day_sales_page_failure_rate');
 export const orderRequestDuration = new Trend('day_sales_order_request_duration', true);
 export const orderRequestFailureRate = new Rate('day_sales_order_request_failure_rate');
 
+// Mở một trang hoặc API smoke và ghi nhận metric phản hồi.
 export function openPage(
   path: string,
   name: string,
@@ -32,6 +33,7 @@ export function openPage(
   return response;
 }
 
+// Gửi request đặt hàng thật để đo tải endpoint tạo đơn.
 export function submitOrderRequest(): RefinedResponse<ResponseType | undefined> {
   const url = `${performanceProfile.baseURL}${performanceProfile.orderRequestEndpoint}`;
   const response = http.post(url, performanceProfile.orderRequestPayload, {

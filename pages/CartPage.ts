@@ -2,10 +2,12 @@ import { expect, type Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class CartPage extends BasePage {
+  // Khởi tạo trang giỏ hàng với Playwright page hiện tại.
   constructor(page: Page) {
     super(page);
   }
 
+  // Chọn sản phẩm đầu tiên trong giỏ hàng để chuẩn bị checkout.
   async selectProduct(): Promise<void> {
     const cartItem = this.page.locator('.cart__item').first();
     const emptyCart = this.page.getByText(/chưa có sản phẩm nào trong giỏ hàng/i).first();
@@ -33,6 +35,7 @@ export class CartPage extends BasePage {
       .click();
   }
 
+  // Bấm đặt hàng các sản phẩm đã chọn và chờ chuyển sang trang checkout.
   async checkoutSelected(): Promise<void> {
     await this.page
       .getByRole('button', { name: /đặt hàng đã chọn/i })

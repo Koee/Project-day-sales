@@ -16,6 +16,7 @@ export const options: Options = {
   thresholds: smokeThresholds
 };
 
+// Chạy scenario smoke bằng cách mở lần lượt các trang/API cấu hình sẵn.
 export default function smokePagesScenario(): void {
   for (const page of smokePages) {
     openPage(page.path, page.name, page.requestType);
@@ -23,6 +24,7 @@ export default function smokePagesScenario(): void {
   }
 }
 
+// Xuất summary JSON sau khi k6 smoke test kết thúc.
 export function handleSummary(data: unknown): Record<string, string> {
   return {
     'performance/k6/reports/smoke-summary.json': buildSummaryReport(data as never, {

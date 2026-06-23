@@ -4,8 +4,10 @@ import path from 'node:path';
 
 const reportRoot = 'report';
 
+// Lưu screenshot và metadata kết quả test vào thư mục report.
 export async function saveTestResultReport(page: Page, testInfo: TestInfo): Promise<void> {
-  const statusFolder = testInfo.status === 'passed' ? 'pass' : 'false';
+  const hasSuccessPopup = await orderSuccessDialog(page).isVisible().catch(() => false);
+  const statusFolder = hasSuccessPopup || testInfo.status === 'passed' ? 'pass' : 'false';
   const outputDir = path.join(reportRoot, statusFolder);
   const fileBaseName = sanitizeFileName(testInfo.title);
   const screenshotPath = path.join(outputDir, `${fileBaseName}.png`);
@@ -20,7 +22,7 @@ export async function saveTestResultReport(page: Page, testInfo: TestInfo): Prom
   await removeStaleReports(fileBaseName);
 
   try {
-    await captureReportScreenshot(page, screenshotPath, statusFolder);
+    await captureReportScreenshot(page, screenshotPath, hasSuccessPopup);
     screenshot = screenshotPath;
   } catch (error) {
     screenshotError = error instanceof Error ? error.message : String(error);
@@ -45,13 +47,10 @@ export async function saveTestResultReport(page: Page, testInfo: TestInfo): Prom
   );
 }
 
-async function captureReportScreenshot(page: Page, screenshotPath: string, statusFolder: string): Promise<void> {
-  if (statusFolder === 'pass') {
-    const successDialog = page
-      .locator('.modal-content:visible, .modal-dialog:visible, [role="dialog"]:visible')
-      .filter({ hasText: /đặt hàng.*thành công|thành công/i })
-      .last();
-
+// Chụp screenshot ưu tiên dialog thành công nếu test pass.
+async function captureReportScreenshot(page: Page, screenshotPath: string, hasSuccessPopup: boolean): Promise<void> {
+  if (hasSuccessPopup) {
+    const successDialog = orderSuccessDialog(page);
     if (await successDialog.isVisible().catch(() => false)) {
       await successDialog.screenshot({ path: screenshotPath });
       return;
@@ -61,6 +60,14 @@ async function captureReportScreenshot(page: Page, screenshotPath: string, statu
   await page.screenshot({ path: screenshotPath, fullPage: false });
 }
 
+function orderSuccessDialog(page: Page): ReturnType<Page['locator']> {
+  return page
+    .locator('.modal-content:visible, .modal-dialog:visible, [role="dialog"]:visible')
+    .filter({ hasText: /đặt hàng.*thành công|thành công/i })
+    .last();
+}
+
+// Xóa report cũ cùng tên ở cả thư mục pass và false.
 async function removeStaleReports(fileBaseName: string): Promise<void> {
   await Promise.all(
     ['pass', 'false'].flatMap((statusFolder) => [
@@ -70,6 +77,7 @@ async function removeStaleReports(fileBaseName: string): Promise<void> {
   );
 }
 
+// Chuẩn hóa tiêu đề test thành tên file an toàn.
 function sanitizeFileName(value: string): string {
   return value
     .normalize('NFD')

@@ -36,17 +36,20 @@ type ReportConfig = {
   configuredIterations?: number;
 };
 
+// Lấy giá trị số của metric theo key, trả null nếu không tồn tại.
 function metricValue(metric: SummaryMetric | undefined, key: string): number | null {
   const value = metric?.[key];
   return typeof value === 'number' ? value : null;
 }
 
+// Kiểm tra có threshold nào bị vượt trong dữ liệu summary hay không.
 function hasCrossedThreshold(metrics: Record<string, SummaryMetric | undefined>): boolean {
   return Object.values(metrics).some((metric) =>
     Object.values(metric?.thresholds ?? {}).some((crossed) => crossed)
   );
 }
 
+// Chuyển danh sách check của k6 thành cấu trúc report gọn hơn.
 function checkDetails(data: SummaryData): SummaryCheck[] {
   return Object.values(data.root_group?.checks ?? {}).map((check) => ({
     name: check.name,
@@ -55,6 +58,7 @@ function checkDetails(data: SummaryData): SummaryCheck[] {
   }));
 }
 
+// Build JSON summary cho k6 smoke hoặc order load test.
 export function buildSummaryReport(data: SummaryData, config: ReportConfig): string {
   const checks = data.metrics.checks;
   const httpReqs = data.metrics.http_reqs;
