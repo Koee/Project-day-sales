@@ -24,10 +24,12 @@ export const options: Options = {
   thresholds: orderRequestThresholds
 };
 
+// Chạy scenario gửi request đặt hàng theo cấu hình k6.
 export default function orderRequestsScenario(): void {
   submitOrderRequest();
 }
 
+// Xuất summary JSON sau khi k6 order load test kết thúc.
 export function handleSummary(data: unknown): Record<string, string> {
   return {
     'performance/k6/reports/orders-summary.json': buildSummaryReport(data as never, {

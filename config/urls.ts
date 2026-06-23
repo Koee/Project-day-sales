@@ -7,6 +7,7 @@ export const urls = {
   productWithSalesChannel: '/store/11/product/cha-ca-kg-6568.html?package_query=',
   cart: '/shoppingCart',
   checkout: '/shoppingCheckout',
+  loginStart: env.loginStartPath,
   keycloakLogin: env.keycloakLoginURL,
   keycloakRegister: env.keycloakRegisterURL,
   keycloakForgotPassword: env.keycloakForgotPasswordURL

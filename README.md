@@ -21,6 +21,7 @@ Local environment values are loaded from `config/.env`. Update that file when Ke
 BASE_URL=https://day-sales-staging.timdaythay.com
 TEST_SPEC=
 TEST_GREP=
+LOGIN_START_PATH=/product
 KEYCLOAK_LOGIN_URL=
 KEYCLOAK_REGISTER_URL=
 KEYCLOAK_FORGOT_PASSWORD_URL=
@@ -89,6 +90,12 @@ Open HTML report:
 
 ```bash
 npm run report
+```
+
+Clean JSON/PNG reports under `report/pass` and `report/false` before a new run:
+
+```bash
+npm run report:clean
 ```
 
 Type-check:

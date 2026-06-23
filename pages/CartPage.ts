@@ -2,16 +2,21 @@ import { expect, type Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class CartPage extends BasePage {
+  // Khởi tạo trang giỏ hàng với Playwright page hiện tại.
   constructor(page: Page) {
     super(page);
   }
 
+  // Chọn sản phẩm đầu tiên trong giỏ hàng để chuẩn bị checkout.
   async selectProduct(): Promise<void> {
     const cartItem = this.page.locator('.cart__item').first();
     const emptyCart = this.page.getByText(/chưa có sản phẩm nào trong giỏ hàng/i).first();
 
-    await expect(cartItem.or(emptyCart)).toBeVisible({ timeout: 5_000 });
-    await expect(emptyCart).toBeHidden({ timeout: 1_000 });
+    await expect(
+      cartItem.or(emptyCart),
+      'Cart page should show either a cart item or the empty-cart state before selecting product'
+    ).toBeVisible({ timeout: 5_000 });
+    await expect(emptyCart, 'Cart should not be empty after adding product before checkout').toBeHidden({ timeout: 1_000 });
 
     const checkbox = this.page
       .getByRole('checkbox')
@@ -22,6 +27,7 @@ export class CartPage extends BasePage {
       return;
     }
 
+    // TODO: Replace this fallback with an accessible locator/data-testid after DOM inspection.
     // Day Sales hides the native checkbox and exposes the visible control as its label.
     await this.page
       .locator('.cart__item .checkbox-container .label-checkbox')
@@ -29,6 +35,7 @@ export class CartPage extends BasePage {
       .click();
   }
 
+  // Bấm đặt hàng các sản phẩm đã chọn và chờ chuyển sang trang checkout.
   async checkoutSelected(): Promise<void> {
     await this.page
       .getByRole('button', { name: /đặt hàng đã chọn/i })
@@ -36,6 +43,6 @@ export class CartPage extends BasePage {
       .first()
       .click();
 
-    await expect(this.page).toHaveURL(/shoppingCheckout/i);
+    await expect(this.page, 'Page should navigate to shopping checkout after clicking checkout selected').toHaveURL(/shoppingCheckout/i);
   }
 }

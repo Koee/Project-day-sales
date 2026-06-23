@@ -10,6 +10,7 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
+    "report:clean": "node scripts/clean-test-reports.js",
     "install:browsers": "playwright install --with-deps chromium",
     "typecheck": "tsc --noEmit",
     "perf:check": "k6 version",

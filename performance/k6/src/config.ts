@@ -49,6 +49,7 @@ export const jsonHeaders = {
   'Content-Type': 'application/json'
 };
 
+// Tạo header cho request checkout API, có gắn cookie nếu được cấu hình.
 export function checkoutApiHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'User-Agent': 'day-sales-k6-performance/1.0',
