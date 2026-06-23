@@ -26,9 +26,38 @@ export class LoginPage extends BasePage {
     await this.goto(urls.loginStart);
     await this.closeStickerIfVisible();
     await expect(this.loginTrigger(), 'Login action should disappear after successful login').toBeHidden();
+    await this.openMenuForLoginReport();
   }
 
   // Mở form đăng nhập từ nút trực tiếp hoặc từ menu mobile.
+  async openKeycloakLoginFromStore(): Promise<void> {
+    await this.goto(urls.loginStart);
+    await this.closeStickerIfVisible();
+    await this.openLoginForm();
+    await expect(this.page, 'Login action should redirect to Keycloak').toHaveURL(/keycloak-staging\.timdaythay\.com/i);
+  }
+
+  async expectAuthenticatedHeaderVisible(): Promise<void> {
+    await this.goto(urls.loginStart);
+    await this.closeStickerIfVisible();
+    await this.hideVConsoleIfVisible();
+    await expect(this.loginTrigger(), 'Login action should not be visible after successful login').toBeHidden();
+    await expect(
+      this.authenticatedUserAction(),
+      'Header should show user action/avatar after successful login'
+    ).toBeVisible();
+  }
+
+  async logoutConfiguredAccount(): Promise<void> {
+    await this.loginWithConfiguredAccount();
+    await this.goto(urls.loginStart);
+    await this.closeStickerIfVisible();
+    await this.hideVConsoleIfVisible();
+    await this.openUserMenuIfPossible();
+    await this.logoutTrigger().click();
+    await expect(this.loginTrigger(), 'Login action should be visible again after logout').toBeVisible();
+  }
+
   private async openLoginForm(): Promise<void> {
     const directLoginTrigger = this.loginTrigger();
 
@@ -39,6 +68,27 @@ export class LoginPage extends BasePage {
 
     await this.menuToggle().click();
     await this.menuLoginTrigger().click();
+  }
+
+  private async openMenuForLoginReport(): Promise<void> {
+    const menuToggle = this.menuToggle();
+
+    if (await menuToggle.isVisible().catch(() => false)) {
+      await menuToggle.click();
+      await expect(
+        this.page.locator('.menu-header, .menu-body, .menu-mobile, .offcanvas, .drawer, nav:visible').first(),
+        'Menu should be visible in the login success report screenshot'
+      ).toBeVisible();
+    }
+  }
+
+  private async openUserMenuIfPossible(): Promise<void> {
+    await this.hideVConsoleIfVisible();
+    const userAction = this.authenticatedUserAction();
+
+    if (await userAction.isVisible().catch(() => false)) {
+      await userAction.click();
+    }
   }
 
   // Đóng sticker/popup nếu nó đang hiển thị trên trang.
@@ -54,6 +104,14 @@ export class LoginPage extends BasePage {
   }
 
   // Lấy trigger đăng nhập trên header.
+  private async hideVConsoleIfVisible(): Promise<void> {
+    await this.page.locator('#__vconsole').evaluateAll((elements) => {
+      for (const element of elements) {
+        (element as HTMLElement).style.display = 'none';
+      }
+    });
+  }
+
   private loginTrigger(): Locator {
     return this.page
       .locator('#usercol > div.flex-vertical > div.flex-column-center > span:nth-child(1)')
@@ -74,6 +132,23 @@ export class LoginPage extends BasePage {
   }
 
   // Submit form đăng nhập và chờ redirect thành công.
+  private authenticatedUserAction(): Locator {
+    return this.page
+      .locator('a[href*="/user/profile"]:visible, .user-avatar:visible, .user-name:visible, .logout-btn:visible')
+      .or(this.page.getByRole('button', { name: /account|user|profile|tai khoan|dang xuat|logout/i }))
+      .or(this.page.getByRole('link', { name: /account|user|profile|tai khoan|dang xuat|logout/i }))
+      .first();
+  }
+
+  private logoutTrigger(): Locator {
+    return this.page
+      .getByRole('button', { name: /dang xuat|log out|logout|sign out/i })
+      .or(this.page.getByRole('link', { name: /dang xuat|log out|logout|sign out/i }))
+      // TODO: Replace CSS fallback after inspecting the Day Sales logout DOM.
+      .or(this.page.locator('button.logout, button.logout-btn, a.logout, a.logout-btn, .logout-btn'))
+      .first();
+  }
+
   private async submitLoginForm(): Promise<void> {
     await Promise.all([
       this.waitForSuccessfulLoginRedirect(),
@@ -117,12 +192,13 @@ export class LoginPage extends BasePage {
 
   // Lấy nút submit form đăng nhập.
   private submitButton(): Locator {
+    const loginButtonName = /đăng nhập|dang nhap|login|log in|sign in|continue/i;
+
     return this.page
-      .locator('button.btn-submit')
-      .filter({ hasText: 'Đăng nhập' })
-      .or(this.page.getByRole('button', { name: /đăng nhập|login|log in|sign in|continue/i }))
+      .locator('button.btn-submit, input.btn-submit')
+      .or(this.page.getByRole('button', { name: loginButtonName }))
       // TODO: Replace CSS fallback after inspecting the Keycloak login DOM.
-      .or(this.page.locator('input[type="submit"], button[type="submit"]'))
+      .or(this.page.locator('button, input[type="submit"]').filter({ hasText: loginButtonName }))
       .first();
   }
 }

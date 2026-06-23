@@ -9,7 +9,7 @@ export async function saveTestResultReport(page: Page, testInfo: TestInfo): Prom
   const hasSuccessPopup = await orderSuccessDialog(page).isVisible().catch(() => false);
   const statusFolder = hasSuccessPopup || testInfo.status === 'passed' ? 'pass' : 'false';
   const outputDir = path.join(reportRoot, statusFolder);
-  const fileBaseName = sanitizeFileName(testInfo.title);
+  const fileBaseName = reportFileBaseName(testInfo);
   const screenshotPath = path.join(outputDir, `${fileBaseName}.png`);
   const infoPath = path.join(outputDir, `${fileBaseName}.json`);
   let screenshot: string | undefined;
@@ -24,6 +24,10 @@ export async function saveTestResultReport(page: Page, testInfo: TestInfo): Prom
   try {
     await captureReportScreenshot(page, screenshotPath, hasSuccessPopup);
     screenshot = screenshotPath;
+    await testInfo.attach('report screenshot', {
+      path: screenshotPath,
+      contentType: 'image/png'
+    });
   } catch (error) {
     screenshotError = error instanceof Error ? error.message : String(error);
   }
@@ -37,6 +41,13 @@ export async function saveTestResultReport(page: Page, testInfo: TestInfo): Prom
         expectedStatus: testInfo.expectedStatus,
         durationMs: testInfo.duration,
         screenshot,
+        image: screenshot
+          ? {
+              path: screenshot,
+              contentType: 'image/png',
+              attachmentName: 'report screenshot'
+            }
+          : undefined,
         screenshotError,
         errors: testInfo.errors.map((error) => error.message)
       },
@@ -85,4 +96,38 @@ function sanitizeFileName(value: string): string {
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .toLowerCase();
+}
+
+function reportFileBaseName(testInfo: TestInfo): string {
+  const testFileName = path.basename(testInfo.file, path.extname(testInfo.file));
+  const specBaseName = sanitizeFileName(testFileName.replace(/\.spec$/i, '') || testInfo.title);
+  const testCaseCode = reportTestCaseCode(testInfo.title, specBaseName);
+
+  if (!testCaseCode) {
+    return specBaseName;
+  }
+
+  return `${specBaseName}-${testCaseCode}`;
+}
+
+function reportTestCaseCode(title: string, specBaseName: string): string | undefined {
+  const testCaseCode = title.match(/\bTC(?:[-\s]+([A-Z]+(?:[-\s]+[A-Z]+)*))?[-\s]*([A-Z]?\d+)\b/i);
+
+  if (!testCaseCode) {
+    return undefined;
+  }
+
+  const rawGroups = testCaseCode[1]?.toUpperCase().split(/[-\s]+/).filter(Boolean) ?? [];
+  const rawCaseNumber = testCaseCode[2].toUpperCase();
+  const normalizedCaseNumber = rawCaseNumber.match(/^\d+$/)
+    ? rawCaseNumber.padStart(3, '0')
+    : rawCaseNumber.replace(/^([A-Z]+)0*(\d+)$/, (_, prefix: string, number: string) => `${prefix}${number.padStart(2, '0')}`);
+  const specTokens = new Set(specBaseName.toUpperCase().split('-'));
+  const groupsToKeep = rawGroups.filter((group) => !specTokens.has(group));
+
+  if (groupsToKeep.length > 0) {
+    return `TC-${groupsToKeep.join('-')}-${normalizedCaseNumber}`;
+  }
+
+  return `TC${normalizedCaseNumber}`;
 }
