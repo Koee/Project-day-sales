@@ -3,6 +3,7 @@ import { expectCartLayout } from '../../steps/cart.steps';
 import { expectCheckoutLayout } from '../../steps/checkout.steps';
 import {
   expectStoreHeader,
+  expectStoreFooter,
   expectStoreLayout,
   expectStoreMobileLayout,
   expectStoreProductCard,
@@ -23,8 +24,12 @@ test.describe('Store UI', () => {
     await expectStoreHeader(page);
   });
 
-  test('TC-UI-003 should render store responsively on mobile viewport @ui @store @mobile', async ({ page }) => {
-    await expectStoreMobileLayout(page);
+  test('TC-TH-005 should show store footer UI @ui @store @footer', async ({ page }) => {
+    await expectStoreFooter(page);
+  });
+
+  test('TC-UI-003 should render store responsively on mobile viewport @ui @store @mobile', async ({ page }, testInfo) => {
+    await expectStoreMobileLayout(page, testInfo);
   });
 
   test('TC-UI-004 should show product card information @ui @store @product', async ({ page }) => {

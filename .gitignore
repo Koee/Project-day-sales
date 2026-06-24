@@ -6,6 +6,7 @@ performance/k6/dist/
 performance/k6/reports/
 .env
 config/.env
+.auth/
 .DS_Store
 npm-debug.log*
 *.log

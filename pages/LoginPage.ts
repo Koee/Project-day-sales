@@ -49,12 +49,26 @@ export class LoginPage extends BasePage {
   }
 
   async logoutConfiguredAccount(): Promise<void> {
-    await this.loginWithConfiguredAccount();
     await this.goto(urls.loginStart);
     await this.closeStickerIfVisible();
     await this.hideVConsoleIfVisible();
-    await this.openUserMenuIfPossible();
-    await this.logoutTrigger().click();
+
+    if (!(await this.authenticatedUserAction().isVisible().catch(() => false))) {
+      await this.loginWithConfiguredAccount();
+      await this.goto(urls.loginStart);
+      await this.closeStickerIfVisible();
+      await this.hideVConsoleIfVisible();
+    }
+
+    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
+      await this.openUserMenuIfPossible();
+    }
+
+    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
+      await this.menuToggle().click();
+    }
+
+    await this.clickLogoutAction();
     await expect(this.loginTrigger(), 'Login action should be visible again after logout').toBeVisible();
   }
 
@@ -114,7 +128,7 @@ export class LoginPage extends BasePage {
 
   private loginTrigger(): Locator {
     return this.page
-      .locator('#usercol > div.flex-vertical > div.flex-column-center > span:nth-child(1)')
+      .getByText(/Ä‘Äƒng nháº­p|dang nhap|login|log in|sign in/i)
       .filter({ hasText: 'Đăng nhập' })
       .or(this.page.getByRole('link', { name: /đăng nhập|login|log in|sign in/i }))
       .or(this.page.getByRole('button', { name: /đăng nhập|login|log in|sign in/i }))
@@ -142,11 +156,30 @@ export class LoginPage extends BasePage {
 
   private logoutTrigger(): Locator {
     return this.page
-      .getByRole('button', { name: /dang xuat|log out|logout|sign out/i })
-      .or(this.page.getByRole('link', { name: /dang xuat|log out|logout|sign out/i }))
+      .locator('button:visible, a:visible, [role="button"]:visible, [role="menuitem"]:visible, .logout-btn:visible')
+      .filter({ hasText: /đăng xuất|dang xuat|log out|logout|sign out/i })
+      .or(this.page.getByRole('button', { name: /đăng xuất|dang xuat|log out|logout|sign out/i }))
+      .or(this.page.getByRole('link', { name: /đăng xuất|dang xuat|log out|logout|sign out/i }))
       // TODO: Replace CSS fallback after inspecting the Day Sales logout DOM.
       .or(this.page.locator('button.logout, button.logout-btn, a.logout, a.logout-btn, .logout-btn'))
       .first();
+  }
+
+  private async clickLogoutAction(): Promise<void> {
+    const visibleLogoutText = this.page
+      .locator('span:visible, div:visible, a:visible, button:visible')
+      .filter({ hasText: /^Đăng xuất$|^Đăng Xuất$|^Dang xuat$/i })
+      .last();
+
+    if (await visibleLogoutText.isVisible().catch(() => false)) {
+      await visibleLogoutText.click();
+      return;
+    }
+
+    const logoutTrigger = this.logoutTrigger();
+
+    await expect(logoutTrigger, 'Logout action should be visible for authenticated user').toBeVisible();
+    await logoutTrigger.click();
   }
 
   private async submitLoginForm(): Promise<void> {
@@ -165,9 +198,7 @@ export class LoginPage extends BasePage {
       { timeout: 45_000 }
     );
     await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => {
-      // Staging can keep background requests open after auth callback completes.
-    });
+    await expect(this.page.locator('body'), 'Day Sales page body should be visible after auth redirect').toBeVisible();
   }
 
   // Lấy ô nhập email hoặc username trong form Keycloak.

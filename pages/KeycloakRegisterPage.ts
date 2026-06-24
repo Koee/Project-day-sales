@@ -36,6 +36,14 @@ export class KeycloakRegisterPage {
     await this.submitButton().click();
   }
 
+  async fillValidRegistrationData(details: OAuthRegistrationDetails): Promise<void> {
+    await this.usernameInput().fill(details.username);
+    await this.emailInput().fill(details.email);
+    await this.passwordInput().fill(details.password);
+    await this.confirmPasswordInput().fill(details.confirmPassword);
+    await this.checkAgreementIfPresent();
+  }
+
   async expectRegistrationSuccessPopup(): Promise<void> {
     await expect(this.registrationSuccessPopup(), 'Registration should show the congratulations popup').toBeVisible();
   }
@@ -52,6 +60,12 @@ export class KeycloakRegisterPage {
 
   async expectRecaptchaVisible(): Promise<void> {
     await expect(this.recaptchaFrame(), 'Registration reCAPTCHA should be visible').toBeVisible();
+  }
+
+  async expectCaptchaGateVisible(): Promise<void> {
+    await this.expectRecaptchaVisible();
+    await expect(this.registrationForm(), 'Registration form should remain visible while CAPTCHA is unresolved').toBeVisible();
+    await expect(this.submitButton(), 'Registration submit should stay visible behind CAPTCHA gate').toBeVisible();
   }
 
   async checkRecaptchaIfPossible(): Promise<void> {
@@ -80,7 +94,7 @@ export class KeycloakRegisterPage {
     return this.page
       .getByLabel(/username|user name|tai khoan/i)
       .or(this.page.getByPlaceholder(/username|user name|tai khoan/i))
-      .or(this.registrationTextInputs().nth(0))
+      .or(this.page.locator('input[name="username"], input#username'))
       .first();
   }
 
@@ -89,7 +103,6 @@ export class KeycloakRegisterPage {
       .getByLabel(/email|e-mail|phone|dien thoai/i)
       .or(this.page.getByPlaceholder(/email|e-mail|phone|dien thoai/i))
       .or(this.page.locator('input[type="email"], input[name="email"], input#email'))
-      .or(this.registrationTextInputs().nth(1))
       .first();
   }
 
@@ -98,7 +111,6 @@ export class KeycloakRegisterPage {
       .getByLabel(/password|mat khau/i)
       .or(this.page.getByPlaceholder(/password|mat khau/i))
       .or(this.page.locator('input[name="password"], input#password'))
-      .or(this.registrationTextInputs().nth(2))
       .first();
   }
 
@@ -107,12 +119,7 @@ export class KeycloakRegisterPage {
       .getByLabel(/confirm password|password-confirm|nhap lai mat khau|xac nhan mat khau/i)
       .or(this.page.getByPlaceholder(/confirm password|password-confirm|nhap lai mat khau|xac nhan mat khau/i))
       .or(this.page.locator('input[name="password-confirm"], input#password-confirm, input[name="passwordConfirm"]'))
-      .or(this.registrationTextInputs().nth(3))
       .last();
-  }
-
-  private registrationTextInputs(): Locator {
-    return this.registrationForm().locator('input:not([type="hidden"]):not([type="checkbox"]):not([type="submit"])');
   }
 
   private submitButton(): Locator {

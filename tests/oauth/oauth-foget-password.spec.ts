@@ -1,9 +1,11 @@
 import { test } from '@playwright/test';
 import {
   expectKeycloakForgotPasswordForm,
+  openForgotPasswordFromLoginPage,
   openKeycloakForgotPassword,
   requestPasswordResetForConfiguredAccount,
   requestPasswordResetForUnknownAccount,
+  submitInvalidForgotPasswordEmail,
   submitEmptyForgotPasswordForm
 } from '../../steps/oauth.steps';
 import { saveTestResultReport } from '../../utils/test-report.helper';
@@ -33,5 +35,15 @@ test.describe('OAuth Forgot Password', () => {
   test('TC-FP-004 should keep user on forgot password form when email is empty @oauth @auth @forgot-password @negative', async ({ page }) => {
     await openKeycloakForgotPassword(page);
     await submitEmptyForgotPasswordForm(page);
+  });
+
+  test('TC-QMK-004 should keep user on forgot password form when email format is invalid @oauth @auth @forgot-password @negative', async ({ page }) => {
+    await openKeycloakForgotPassword(page);
+    await submitInvalidForgotPasswordEmail(page);
+  });
+
+  test('TC-QMK-008 should open forgot password form from login page link @oauth @auth @forgot-password', async ({ page }) => {
+    await openForgotPasswordFromLoginPage(page);
+    await expectKeycloakForgotPasswordForm(page);
   });
 });

@@ -260,20 +260,11 @@ export class CheckoutPage extends BasePage {
   private async fillAddressTextField(field: AddressField, value: string): Promise<void> {
     const textField = this.addressTextField(field);
     if (await textField.isVisible().catch(() => false)) {
-      try {
-        await textField.fill(value);
-      } catch (e) {
-        console.warn(
-          `[CheckoutPage] fillAddressTextField: fill() failed for "${field}" with accessible locator, using fallback index:`,
-          e
-        );
-        await this.currentDialog().locator('input:visible, textarea:visible').nth(this.getAddressTextFallbackIndex(field)).fill(value);
-      }
+      await textField.fill(value);
       return;
     }
 
-    // TODO: Replace this fallback with data-testid or accessible labels after DOM inspection.
-    await this.currentDialog().locator('input:visible, textarea:visible').nth(this.getAddressTextFallbackIndex(field)).fill(value);
+    throw new Error(`Checkout address text field "${field}" was not found by label, textbox role, or placeholder.`);
   }
 
   // Chọn giá trị tỉnh, huyện hoặc xã trong form địa chỉ.
@@ -304,10 +295,7 @@ export class CheckoutPage extends BasePage {
       return;
     }
 
-    const customSelect = dialog.locator('.select-box:visible').nth(this.getAddressSelectFallbackIndex(field));
-    await expect(customSelect, `Address custom select fallback should be visible for "${field}"`).toBeVisible();
-    await customSelect.click();
-    await this.selectVisibleDropdownOption(value);
+    throw new Error(`Checkout address select "${field}" was not found by combobox, label, placeholder, or visible label text.`);
   }
 
   // Chọn option đang hiển thị trong dropdown theo text truyền vào.

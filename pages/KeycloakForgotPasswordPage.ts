@@ -15,6 +15,12 @@ export class KeycloakForgotPasswordPage {
     await this.submitButton().click();
   }
 
+  async submitInvalidEmail(email: string): Promise<void> {
+    await this.submitEmail(email);
+    await expect(this.validationMessage(), 'Forgot password should show validation for an invalid email format').toBeVisible();
+    await expect(this.forgotPasswordForm(), 'Forgot password form should stay visible when email format is invalid').toBeVisible();
+  }
+
   async submitEmpty(): Promise<void> {
     await this.submitButton().click();
     await expect(this.validationMessage(), 'Forgot password should show required-field validation').toBeVisible();
