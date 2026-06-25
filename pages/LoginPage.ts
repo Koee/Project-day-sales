@@ -42,6 +42,7 @@ export class LoginPage extends BasePage {
     await this.goto(urls.loginStart);
     await this.closeStickerIfVisible();
     await this.hideVConsoleIfVisible();
+    await this.openMenuIfNeededFor(this.authenticatedUserAction());
     await expect(this.loginTrigger(), 'Login action should not be visible after successful login').toBeHidden();
     await expect(
       this.authenticatedUserAction(),
@@ -54,9 +55,7 @@ export class LoginPage extends BasePage {
     await this.closeStickerIfVisible();
     await this.hideVConsoleIfVisible();
 
-    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
-      await this.menuToggle().click();
-    }
+    await this.openMenuIfNeededFor(this.logoutTrigger());
 
     if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
       await this.loginWithConfiguredAccount();
@@ -65,18 +64,14 @@ export class LoginPage extends BasePage {
       await this.hideVConsoleIfVisible();
     }
 
-    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
-      await this.menuToggle().click();
-    }
+    await this.openMenuIfNeededFor(this.logoutTrigger());
 
     await this.clickLogoutAction();
     await this.page.waitForLoadState('domcontentloaded');
     await this.goto(urls.loginStart);
     await this.closeStickerIfVisible();
     await this.hideVConsoleIfVisible();
-    if (!(await this.loginTrigger().isVisible().catch(() => false))) {
-      await this.menuToggle().click();
-    }
+    await this.openMenuIfNeededFor(this.loginTrigger().or(this.menuLoginTrigger()));
     await expect(
       this.loginTrigger().or(this.menuLoginTrigger()),
       'Login action should be visible again after logout'
@@ -91,6 +86,8 @@ export class LoginPage extends BasePage {
       return;
     }
 
+    await this.openMenuIfNeededFor(this.menuLoginTrigger());
+
     const menuLoginTrigger = this.menuLoginTrigger();
     if (await menuLoginTrigger.isVisible().catch(() => false)) {
       await menuLoginTrigger.click();
@@ -102,7 +99,6 @@ export class LoginPage extends BasePage {
       return;
     }
 
-    await this.menuToggle().click();
     await this.menuLoginTrigger().click();
   }
 
@@ -125,6 +121,27 @@ export class LoginPage extends BasePage {
     if (await userAction.isVisible().catch(() => false)) {
       await userAction.click();
     }
+  }
+
+  private async openMenuIfNeededFor(target: Locator): Promise<void> {
+    if (await target.isVisible().catch(() => false)) {
+      return;
+    }
+
+    const menuToggle = this.menuToggle();
+    if (!(await menuToggle.isVisible().catch(() => false))) {
+      return;
+    }
+
+    if (await this.menuPanel().isVisible().catch(() => false)) {
+      return;
+    }
+
+    await menuToggle.click();
+    await expect(
+      this.menuPanel(),
+      'Responsive menu should be visible after clicking burger toggle'
+    ).toBeVisible();
   }
 
   // Đóng sticker/popup nếu nó đang hiển thị trên trang.
@@ -159,7 +176,17 @@ export class LoginPage extends BasePage {
 
   // Lấy nút mở menu trên giao diện responsive.
   private menuToggle(): Locator {
-    return this.page.locator('.burger-toggle').filter({ hasText: /Menu/i }).first();
+    return this.page
+      .locator('#logo-col > div.burger-toggle.flex-vertical.align-center.margin-left-15')
+      .or(this.page.locator('.burger-toggle').filter({ hasText: /Menu/i }))
+      .or(this.page.locator('.burger-toggle'))
+      .first();
+  }
+
+  private menuPanel(): Locator {
+    return this.page
+      .locator('.menu-header, .menu-body, .menu-mobile, .menu-cover, .offcanvas, .drawer')
+      .first();
   }
 
   // Lấy nút đăng nhập trong menu.
@@ -169,10 +196,14 @@ export class LoginPage extends BasePage {
 
   // Submit form đăng nhập và chờ redirect thành công.
   private authenticatedUserAction(): Locator {
+    const authenticatedActionName = /account|user|profile|tai khoan|dang xuat|logout|sign out|\u0111\u0103ng xu\u1ea5t|\u0110\u0103ng Xu\u1ea5t|T\u00ean TK:|S\u1eeda h\u1ed3 s\u01a1/i;
+
     return this.page
       .locator('.user-avatar:visible, .user-name:visible, .logout-btn:visible')
-      .or(this.page.getByRole('button', { name: /account|user|profile|tai khoan|dang xuat|logout/i }))
-      .or(this.page.getByRole('link', { name: /account|user|profile|tai khoan|dang xuat|logout/i }))
+      .or(this.page.getByRole('button', { name: authenticatedActionName }))
+      .or(this.page.getByRole('link', { name: authenticatedActionName }))
+      .or(this.page.locator('.menu-cover a.menu-item:visible, .menu-body a:visible, .menu-header a:visible').filter({ hasText: authenticatedActionName }))
+      .or(this.page.locator('span:visible, div:visible, a:visible, button:visible, strong:visible').filter({ hasText: authenticatedActionName }))
       .first();
   }
 

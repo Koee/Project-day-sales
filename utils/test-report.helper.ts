@@ -6,8 +6,9 @@ const reportRoot = 'report';
 
 // Lưu screenshot và metadata kết quả test vào thư mục report.
 export async function saveTestResultReport(page: Page, testInfo: TestInfo): Promise<void> {
+  await waitForReportReady(page);
   const hasSuccessPopup = await orderSuccessDialog(page).isVisible().catch(() => false);
-  const statusFolder = hasSuccessPopup || testInfo.status === 'passed' ? 'pass' : 'false';
+  const statusFolder = testInfo.status === 'passed' ? 'pass' : 'false';
   const outputDir = path.join(reportRoot, statusFolder);
   const fileBaseName = reportFileBaseName(testInfo);
   const screenshotPath = path.join(outputDir, `${fileBaseName}.png`);
@@ -69,6 +70,29 @@ async function captureReportScreenshot(page: Page, screenshotPath: string, hasSu
   }
 
   await page.screenshot({ path: screenshotPath, fullPage: false });
+}
+
+async function waitForReportReady(page: Page): Promise<void> {
+  await page.waitForLoadState('domcontentloaded', { timeout: 2_000 }).catch(() => undefined);
+  await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => undefined);
+  await busyOverlay(page).waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => undefined);
+}
+
+function busyOverlay(page: Page): ReturnType<Page['locator']> {
+  return page
+    .locator(
+      [
+        '.vld-overlay:visible',
+        '.loading:visible',
+        '.loader:visible',
+        '.spinner:visible',
+        '.loading-overlay:visible',
+        '[class*="loading" i]:visible',
+        '[class*="loader" i]:visible'
+      ].join(', ')
+    )
+    .or(page.getByText(/đang xử lý|dang xu ly|loading|processing/i))
+    .first();
 }
 
 function orderSuccessDialog(page: Page): ReturnType<Page['locator']> {
