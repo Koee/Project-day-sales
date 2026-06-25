@@ -8,7 +8,7 @@ export class CartPage extends BasePage {
   }
 
   async openCart(): Promise<void> {
-    await this.page.goto('/shoppingCart');
+    await this.goto('/shoppingCart');
     await expect(this.page, 'Cart page should open shopping cart URL').toHaveURL(/shoppingCart/i);
   }
 

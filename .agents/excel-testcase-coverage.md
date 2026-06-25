@@ -17,7 +17,7 @@ Luu y:
 
 | Module | Tong TC | Covered | Partial | Missing | Ghi chu |
 |---|---:|---:|---:|---:|---|
-| Dang nhap | 12 | 5 | 3 | 4 | Login co ban da tot, con remember/logout/rate-limit/boundary. |
+| Dang nhap | 12 | 6 | 2 | 4 | Login co ban da tot, con remember/rate-limit/boundary. |
 | Dang ky | 14 | 4 | 4 | 6 | Chu yeu da cover validation, chua cover UI/link/phone/name indicator day du. |
 | Quen mat khau | 10 | 3 | 3 | 4 | Email reset co ban da co, flow set password can data/mail. |
 | Trang chu | 12 | 2 | 6 | 4 | Header/layout da co, con footer/perf/notification/lazy loading. |
@@ -41,7 +41,7 @@ Luu y:
 | TC-DL-006 | Dang nhap voi email khong dung dinh dang | Covered | Added `TC-DL-006` in `tests/oauth/oauth-login.spec.ts`. |
 | TC-DL-007 | Kiem tra chuc nang Nho mat khau | Missing | Can xac nhan UI remember-me tren Keycloak. |
 | TC-DL-008 | Hien thi/An mat khau | Covered | `TC-AUTH-008`. |
-| TC-DL-009 | Dang xuat thanh cong | Partial | Added skipped spec `TC-DL-009`; needs Playwright MCP DOM inspect because visible logout text is hidden/non-clickable in current profile layout. |
+| TC-DL-009 | Dang xuat thanh cong | Covered | `tests/oauth/oauth-login.spec.ts` `TC-DL-009`; focused Playwright run passed after validating logout and visible login action. |
 | TC-DL-010 | Dang nhap voi nhieu lan sai lien tiep | Missing | Security/rate-limit; can chot so lan va expected tren staging. |
 | TC-DL-011 | Kiem tra UI man hinh dang nhap | Partial | `TC-AUTH-001`, `TC-AUTH-002` cover form/labels, chua cover UI day du. |
 | TC-DL-012 | Dang nhap voi email co khoang trang thua | Covered | Added `TC-DL-012`; staging trims/accepts surrounding whitespace and login succeeds. |
@@ -84,11 +84,11 @@ Luu y:
 
 | Excel TC | Ten TC | Trang thai | Mapping / viec can lam |
 |---|---|---|---|
-| TC-TH-001 | Hien thi banner/slider trang chu | Partial | `TC-UI-001` cover layout, chua assert banner/slider rieng. |
-| TC-TH-002 | Hien thi danh muc san pham tren trang chu | Partial | `TC-UI-001`/store layout lien quan, chua assert category. |
-| TC-TH-003 | Hien thi san pham noi bat/khuyen mai | Partial | `TC-UI-004` cover product card, chua cover featured/promo. |
+| TC-TH-001 | Hien thi banner/slider trang chu | Partial | Added `tests/UI/store-ui.spec.ts` `TC-TH-001`; verification reached spec but staging home returned timeout/504. |
+| TC-TH-002 | Hien thi danh muc san pham tren trang chu | Partial | Added `tests/UI/store-ui.spec.ts` `TC-TH-002`; verification reached spec but staging home returned timeout/504. |
+| TC-TH-003 | Hien thi san pham noi bat/khuyen mai | Partial | Added `tests/UI/store-ui.spec.ts` `TC-TH-003`; verification reached spec but staging home returned timeout/504. |
 | TC-TH-004 | Kiem tra navigation menu header | Covered | `TC-UI-002`. |
-| TC-TH-005 | Kiem tra footer | Missing | Them UI footer. |
+| TC-TH-005 | Kiem tra footer | Covered | `tests/UI/store-ui.spec.ts` `TC-TH-005`. |
 | TC-TH-006 | Kiem tra responsive tren mobile | Covered | `TC-UI-003`, `TC-CB-002`. |
 | TC-TH-007 | Kiem tra toc do tai trang chu | Missing | Nen dua sang k6/perf hoac Playwright timing nhe. |
 | TC-TH-008 | Kiem tra gio hang icon tren header | Partial | `TC-UI-002`, `TC-FN-002` cover header/cart behavior, chua assert icon state rieng. |
@@ -103,10 +103,10 @@ Luu y:
 |---|---|---|---|
 | TC-TK-001 | Tim kiem voi tu khoa co ket qua | Covered | `TC-TK-001`. |
 | TC-TK-002 | Tim kiem voi tu khoa khong co ket qua | Covered | `TC-TK-002`. |
-| TC-TK-003 | Tim kiem voi o trong | Missing | Them negative empty search. |
-| TC-TK-004 | Tim kiem voi ky tu dac biet | Missing | Them boundary. |
-| TC-TK-005 | Tim kiem voi tu khoa tieng Viet co dau | Missing | Them test data product tieng Viet. |
-| TC-TK-006 | Tim kiem voi tu khoa tieng Viet khong dau | Missing | Them test data product khong dau. |
+| TC-TK-003 | Tim kiem voi o trong | Covered | `tests/Fn/FN-Store.spec.ts` `TC-TK-003`. |
+| TC-TK-004 | Tim kiem voi ky tu dac biet | Covered | `tests/Fn/FN-Store.spec.ts` `TC-TK-004`. |
+| TC-TK-005 | Tim kiem voi tu khoa tieng Viet co dau | Covered | `tests/Fn/FN-Store.spec.ts` `TC-TK-005`. |
+| TC-TK-006 | Tim kiem voi tu khoa tieng Viet khong dau | Covered | `tests/Fn/FN-Store.spec.ts` `TC-TK-006`. |
 | TC-TK-007 | Autocomplete/goi y khi tim kiem | Missing | Can inspect autocomplete behavior. |
 | TC-TK-008 | Tim kiem voi chuoi rat dai | Missing | Them boundary. |
 | TC-TK-009 | Sap xep ket qua tim kiem | Missing | Can inspect sort control. |
@@ -120,11 +120,11 @@ Luu y:
 
 | Excel TC | Ten TC | Trang thai | Mapping / viec can lam |
 |---|---|---|---|
-| TC-SP-001 | Xem danh sach san pham theo danh muc | Partial | Store layout co list product, chua category-specific. |
+| TC-SP-001 | Xem danh sach san pham theo danh muc | Covered | `tests/Fn/FN-Store.spec.ts` `TC-SP-001`. |
 | TC-SP-002 | Xem chi tiet san pham | Covered | `TC-FN-001`. |
-| TC-SP-003 | Loc san pham theo gia | Missing | Can inspect filter. |
+| TC-SP-003 | Loc san pham theo gia | Covered | `tests/Fn/FN-Store.spec.ts` `TC-SP-003`. |
 | TC-SP-004 | Loc san pham theo thuong hieu | Missing | Can inspect filter/data. |
-| TC-SP-005 | Sap xep san pham | Missing | Can inspect sort. |
+| TC-SP-005 | Sap xep san pham | Covered | `tests/Fn/FN-Store.spec.ts` `TC-SP-005`. |
 | TC-SP-006 | Xem anh san pham gallery | Missing | Can inspect gallery. |
 | TC-SP-007 | San pham het hang | Missing | Can staging data out-of-stock. |
 | TC-SP-008 | SP lien quan/goi y o trang chi tiet | Missing | Can inspect detail page. |
@@ -215,7 +215,8 @@ Luu y:
    - `TC-DK-002`, `TC-DK-007`, `TC-DK-014`
    - `TC-QMK-004`, `TC-QMK-008`
 2. Phase 2 - Store/search/product high value:
-   - `TC-TH-005`, `TC-TK-003` den `TC-TK-006`, `TC-SP-001`, `TC-SP-003`, `TC-SP-005`
+   - Done in current code: `TC-TH-005`, `TC-TK-003` den `TC-TK-006`, `TC-SP-001`, `TC-SP-003`, `TC-SP-005`
+   - Next candidates: `TC-TK-007` den `TC-TK-014`, `TC-SP-004`, `TC-SP-006` den `TC-SP-010`
 3. Phase 3 - Cart/checkout risk:
    - `TC-GH-006`, `TC-GH-007`, `TC-GH-008`, `TC-GH-009`, `TC-GH-011`, `TC-DH-002` den `TC-DH-005`, `TC-DH-007`, `TC-DH-010`, `TC-DH-011`, `TC-DH-014`
 4. Phase 4 - Feature areas can inspect:

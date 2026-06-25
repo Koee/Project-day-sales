@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { StorePage } from '../../pages/StorePage';
+import { gotoAndAssertPageAvailable } from '../../utils/page-availability.helper';
 import { saveTestResultReport } from '../../utils/test-report.helper';
 
 test.describe('Misc and Cross-browser', () => {
@@ -16,7 +17,7 @@ test.describe('Misc and Cross-browser', () => {
   });
 
   test('TC-CB-003 should use HTTPS on store pages @misc @security', async ({ page }) => {
-    await page.goto('/store/11/');
+    await gotoAndAssertPageAvailable(page, '/store/11/', 'Store 11');
     expect(page.url(), 'Store URL should use HTTPS').toMatch(/^https:\/\//i);
   });
 
@@ -29,8 +30,7 @@ test.describe('Misc and Cross-browser', () => {
       }
     });
 
-    await page.goto('/store/11/');
-    await page.waitForLoadState('domcontentloaded');
+    await gotoAndAssertPageAvailable(page, '/store/11/', 'Store 11');
 
     const appConsoleErrors = consoleErrors.filter(
       (message) =>

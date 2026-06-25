@@ -88,8 +88,7 @@ test.describe('OAuth Login', () => {
     await expectAuthenticatedHeader(page);
   });
 
-  // TODO: Re-enable after inspecting the Day Sales profile/logout DOM with Playwright MCP.
-  test.skip('TC-DL-009 should logout successfully after a configured account session @oauth @auth @login @auth-state', async ({ page }) => {
+  test('TC-DL-009 should logout successfully after a configured account session @oauth @auth @login @auth-state', async ({ page }) => {
     await logoutConfiguredAccount(page);
   });
 

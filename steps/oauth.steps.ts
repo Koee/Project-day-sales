@@ -7,6 +7,7 @@ import { KeycloakLoginPage, type OAuthCredentials } from '../pages/KeycloakLogin
 import { KeycloakRegisterPage } from '../pages/KeycloakRegisterPage';
 import { LoginPage } from '../pages/LoginPage';
 import { SandboxMailPage } from '../pages/SandboxMailPage';
+import { gotoAndAssertPageAvailable } from '../utils/page-availability.helper';
 
 export async function openKeycloakLogin(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);
@@ -62,7 +63,7 @@ export async function loginWithCredentialsAndExpectAuthenticated(page: Page, cre
 }
 
 export async function openProtectedCheckoutWithoutLogin(page: Page): Promise<void> {
-  await page.goto(urls.checkout);
+  await gotoAndAssertPageAvailable(page, urls.checkout, 'Protected checkout page');
   await expect(page, 'Direct checkout without products should open the cart page').toHaveURL(new RegExp(urls.cart, 'i'));
 
   const cartItem = page.locator('.cart__item').first();
@@ -109,7 +110,7 @@ export async function loginAndOpenKeycloakLoginAgain(page: Page): Promise<void> 
   const keycloakLoginURL = env.keycloakLoginURL || await captureKeycloakLoginURL(page);
 
   await loginWithConfiguredAccount(page);
-  await page.goto(keycloakLoginURL);
+  await gotoAndAssertPageAvailable(page, keycloakLoginURL, 'Keycloak login page');
   await expect(
     page,
     'Opening login URL with an existing session should redirect/recover instead of asking for credentials again'
@@ -125,7 +126,7 @@ async function captureKeycloakLoginURL(page: Page): Promise<string> {
 
 export async function openKeycloakRegistration(page: Page): Promise<void> {
   if (env.keycloakRegisterURL) {
-    await page.goto(env.keycloakRegisterURL);
+    await gotoAndAssertPageAvailable(page, env.keycloakRegisterURL, 'Keycloak registration page');
     return;
   }
 
@@ -200,7 +201,7 @@ export async function registerWithWeakPassword(page: Page): Promise<void> {
 
 export async function openKeycloakForgotPassword(page: Page): Promise<void> {
   if (env.keycloakForgotPasswordURL) {
-    await page.goto(env.keycloakForgotPasswordURL);
+    await gotoAndAssertPageAvailable(page, env.keycloakForgotPasswordURL, 'Keycloak forgot password page');
     return;
   }
 

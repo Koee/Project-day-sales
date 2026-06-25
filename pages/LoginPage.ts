@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { env } from '../config/env';
 import { urls } from '../config/urls';
+import { gotoAndAssertPageAvailable } from '../utils/page-availability.helper';
 import { BasePage } from './BasePage';
 
 export class LoginPage extends BasePage {
@@ -53,7 +54,11 @@ export class LoginPage extends BasePage {
     await this.closeStickerIfVisible();
     await this.hideVConsoleIfVisible();
 
-    if (!(await this.authenticatedUserAction().isVisible().catch(() => false))) {
+    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
+      await this.menuToggle().click();
+    }
+
+    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
       await this.loginWithConfiguredAccount();
       await this.goto(urls.loginStart);
       await this.closeStickerIfVisible();
@@ -61,15 +66,21 @@ export class LoginPage extends BasePage {
     }
 
     if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
-      await this.openUserMenuIfPossible();
-    }
-
-    if (!(await this.logoutTrigger().isVisible().catch(() => false))) {
       await this.menuToggle().click();
     }
 
     await this.clickLogoutAction();
-    await expect(this.loginTrigger(), 'Login action should be visible again after logout').toBeVisible();
+    await this.page.waitForLoadState('domcontentloaded');
+    await this.goto(urls.loginStart);
+    await this.closeStickerIfVisible();
+    await this.hideVConsoleIfVisible();
+    if (!(await this.loginTrigger().isVisible().catch(() => false))) {
+      await this.menuToggle().click();
+    }
+    await expect(
+      this.loginTrigger().or(this.menuLoginTrigger()),
+      'Login action should be visible again after logout'
+    ).toBeVisible();
   }
 
   private async openLoginForm(): Promise<void> {
@@ -77,6 +88,17 @@ export class LoginPage extends BasePage {
 
     if (await directLoginTrigger.isVisible().catch(() => false)) {
       await directLoginTrigger.click();
+      return;
+    }
+
+    const menuLoginTrigger = this.menuLoginTrigger();
+    if (await menuLoginTrigger.isVisible().catch(() => false)) {
+      await menuLoginTrigger.click();
+      return;
+    }
+
+    if (env.keycloakLoginURL) {
+      await gotoAndAssertPageAvailable(this.page, env.keycloakLoginURL, 'Keycloak login page');
       return;
     }
 
@@ -113,7 +135,7 @@ export class LoginPage extends BasePage {
       .first();
 
     if (await stickerCloseButton.isVisible().catch(() => false)) {
-      await stickerCloseButton.click();
+      await stickerCloseButton.click({ timeout: 2_000 }).catch(() => undefined);
     }
   }
 
@@ -148,34 +170,27 @@ export class LoginPage extends BasePage {
   // Submit form đăng nhập và chờ redirect thành công.
   private authenticatedUserAction(): Locator {
     return this.page
-      .locator('a[href*="/user/profile"]:visible, .user-avatar:visible, .user-name:visible, .logout-btn:visible')
+      .locator('.user-avatar:visible, .user-name:visible, .logout-btn:visible')
       .or(this.page.getByRole('button', { name: /account|user|profile|tai khoan|dang xuat|logout/i }))
       .or(this.page.getByRole('link', { name: /account|user|profile|tai khoan|dang xuat|logout/i }))
       .first();
   }
 
   private logoutTrigger(): Locator {
+    const logoutButtonName = /đăng xuất|dang xuat|log out|logout|sign out/i;
+
     return this.page
-      .locator('button:visible, a:visible, [role="button"]:visible, [role="menuitem"]:visible, .logout-btn:visible')
-      .filter({ hasText: /đăng xuất|dang xuat|log out|logout|sign out/i })
-      .or(this.page.getByRole('button', { name: /đăng xuất|dang xuat|log out|logout|sign out/i }))
-      .or(this.page.getByRole('link', { name: /đăng xuất|dang xuat|log out|logout|sign out/i }))
+      .locator('.menu-cover a.menu-item:visible')
+      .filter({ hasText: logoutButtonName })
+      .or(this.page.getByRole('button', { name: logoutButtonName }))
+      .or(this.page.getByRole('link', { name: logoutButtonName }))
+      .or(this.page.locator('[role="button"]:visible, [role="menuitem"]:visible').filter({ hasText: logoutButtonName }))
       // TODO: Replace CSS fallback after inspecting the Day Sales logout DOM.
       .or(this.page.locator('button.logout, button.logout-btn, a.logout, a.logout-btn, .logout-btn'))
       .first();
   }
 
   private async clickLogoutAction(): Promise<void> {
-    const visibleLogoutText = this.page
-      .locator('span:visible, div:visible, a:visible, button:visible')
-      .filter({ hasText: /^Đăng xuất$|^Đăng Xuất$|^Dang xuat$/i })
-      .last();
-
-    if (await visibleLogoutText.isVisible().catch(() => false)) {
-      await visibleLogoutText.click();
-      return;
-    }
-
     const logoutTrigger = this.logoutTrigger();
 
     await expect(logoutTrigger, 'Logout action should be visible for authenticated user').toBeVisible();

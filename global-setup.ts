@@ -5,6 +5,10 @@ import { env } from './config/env';
 import { LoginPage } from './pages/LoginPage';
 
 export default async function globalSetup(_config: FullConfig): Promise<void> {
+  if (shouldSkipAuthSetupForCurrentRun()) {
+    return;
+  }
+
   if (!env.loginEmail || !env.loginPassword) {
     return;
   }
@@ -20,4 +24,10 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   } finally {
     await browser.close();
   }
+}
+
+function shouldSkipAuthSetupForCurrentRun(): boolean {
+  const command = process.argv.join(' ').replace(/\\/g, '/');
+
+  return command.includes('tests/UI/store-ui.spec.ts') || command.includes('TC-TH-');
 }

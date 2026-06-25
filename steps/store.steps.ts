@@ -25,6 +25,27 @@ export async function expectStoreFooter(page: Page): Promise<void> {
   await storePage.expectFooterVisible();
 }
 
+export async function expectStoreHomeBannerSlider(page: Page, testInfo?: TestInfo): Promise<void> {
+  const storePage = new StorePage(page);
+
+  await storePage.openHome(testInfo);
+  await storePage.expectHomeBannerSliderVisible();
+}
+
+export async function expectStoreHomeCategories(page: Page, testInfo?: TestInfo): Promise<void> {
+  const storePage = new StorePage(page);
+
+  await storePage.openHome(testInfo);
+  await storePage.expectHomeCategoriesVisible();
+}
+
+export async function expectStoreHomePromotedProducts(page: Page, testInfo?: TestInfo): Promise<void> {
+  const storePage = new StorePage(page);
+
+  await storePage.openHome(testInfo);
+  await storePage.expectHomePromotedProductsVisible();
+}
+
 export async function expectStoreMobileLayout(page: Page, testInfo?: TestInfo): Promise<void> {
   const storePage = new StorePage(page);
 

@@ -1,5 +1,9 @@
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { CartBadgeComponent } from '../components/CartBadgeComponent';
+import { FooterComponent } from '../components/FooterComponent';
+import { HeaderComponent } from '../components/HeaderComponent';
 import { urls } from '../config/urls';
+import { gotoAndAssertPageAvailable } from '../utils/page-availability.helper';
 import { BasePage } from './BasePage';
 
 export class StorePage extends BasePage {
@@ -8,42 +12,58 @@ export class StorePage extends BasePage {
     super(page);
   }
 
-  // Mở trang cửa hàng 11.
-  async openStore11(): Promise<void> {
-    await this.goto(urls.store11);
+  // Mở Store 11 và dừng TC nếu staging trả lỗi availability.
+  async openStore11(testInfo?: TestInfo): Promise<void> {
+    await gotoAndAssertPageAvailable(this.page, urls.store11, 'Store 11', testInfo);
+  }
+
+  // Mở home và dừng TC nếu staging trả lỗi availability.
+  async openHome(testInfo?: TestInfo): Promise<void> {
+    await gotoAndAssertPageAvailable(this.page, urls.home, 'Home page', testInfo);
   }
 
   async openStore11ProductList(): Promise<void> {
-    await this.page.goto(`${urls.store11}/product`, { waitUntil: 'domcontentloaded' });
+    await gotoAndAssertPageAvailable(this.page, `${urls.store11}/product`, 'Store product list');
     await expect(this.productListSignal(), 'Store product list should be visible after navigation').toBeVisible();
   }
 
   async expectStoreLayoutVisible(): Promise<void> {
     await expect(this.page, 'Store page should stay on store or product listing URL').toHaveURL(/\/store\/11|\/product/i);
-    await expect(this.header(), 'Store header should be visible').toBeVisible();
+    await this.headerComponent().expectRootVisible('Store header should be visible');
     await expect(this.productListSignal(), 'Store product content should be visible').toBeVisible();
-    await expect(this.footer(), 'Store footer should be visible').toBeVisible();
+    await this.footerComponent().expectRootVisible('Store footer should be visible');
   }
 
   async expectHeaderVisible(): Promise<void> {
-    await expect(this.headerLogo(), 'Header logo should be visible').toBeVisible();
-    await expect(this.cartEntry(), 'Cart entry should be visible in header').toBeVisible();
-    await expect(this.loginOrUserEntry(), 'Header should show login or user entry').toBeVisible();
+    await this.headerComponent().expectVisible();
   }
 
   async expectFooterVisible(): Promise<void> {
-    const footer = this.footer();
+    await this.footerComponent().expectVisible();
+  }
 
-    await expect(footer, 'Store footer should be visible').toBeVisible();
-    await expect(footer, 'Store footer should contain visible footer content').not.toHaveText(/^\s*$/);
+  async expectHomeBannerSliderVisible(): Promise<void> {
+    await expect(this.homeBannerSlider(), 'Home banner or slider should be visible').toBeVisible();
+    await expect(this.homeBannerImage(), 'Home banner slider should show a visible image').toBeVisible();
+    await expect(this.homeSliderNavigation(), 'Home banner slider should expose navigation controls').toBeVisible();
+  }
+
+  async expectHomeCategoriesVisible(): Promise<void> {
+    await expect(this.homeCategoryNavigation(), 'Home page should show product category navigation').toBeVisible();
+    expect(await this.visibleHomeCategoryCount(), 'Home page should show at least three product category entries').toBeGreaterThanOrEqual(3);
+  }
+
+  async expectHomePromotedProductsVisible(): Promise<void> {
+    await expect(this.homePromotionSignal(), 'Home page should show promotion or featured product content').toBeVisible();
+    await expect(this.productListSignal(), 'Home page should show promoted product cards').toBeVisible();
   }
 
   async expectMobileLayout(): Promise<void> {
-    await expect(this.header(), 'Mobile header should be visible').toBeVisible();
+    await this.headerComponent().expectRootVisible('Mobile header should be visible');
     await expect(this.productListSignal(), 'Mobile product content should be visible').toBeVisible();
     await this.page.locator('body').focus();
     await this.productListSignal().scrollIntoViewIfNeeded();
-    await this.footer().scrollIntoViewIfNeeded().catch(() => undefined);
+    await this.footerComponent().scrollIntoViewIfNeeded().catch(() => undefined);
 
     const overflowElements = await this.horizontalOverflowElements();
     expect(overflowElements, `Mobile store should not have horizontal overflow. Overflow elements: ${overflowElements.join(' | ')}`).toEqual([]);
@@ -75,7 +95,11 @@ export class StorePage extends BasePage {
   }
 
   async openProductsByCategory(categoryId: string): Promise<void> {
-    await this.page.goto(`${urls.store11}/product?category_id=${encodeURIComponent(categoryId)}`, { waitUntil: 'domcontentloaded' });
+    await gotoAndAssertPageAvailable(
+      this.page,
+      `${urls.store11}/product?category_id=${encodeURIComponent(categoryId)}`,
+      'Category product list'
+    );
     await expect(this.productListSignal(), 'Category product list should be visible').toBeVisible();
   }
 
@@ -153,49 +177,23 @@ export class StorePage extends BasePage {
   }
 
   async hasHeaderSearchInput(): Promise<boolean> {
-    return await this.headerSearchInput().isVisible().catch(() => false);
+    return await this.headerComponent().hasSearchInput();
   }
 
   async searchFromHeader(productName: string, testInfo?: TestInfo, searchboxAttachmentName?: string): Promise<void> {
-    const searchInput = this.headerSearchInput();
     const productListUrl = productName.trim()
       ? `${urls.store11}/product?keyword=${encodeURIComponent(productName)}`
       : `${urls.store11}/product`;
 
-    if (!(await searchInput.isVisible().catch(() => false))) {
-      await this.page.goto(productListUrl, { waitUntil: 'domcontentloaded' });
-      return;
-    }
-
-    await searchInput.click();
-    await searchInput.fill(productName);
-    if (testInfo && searchboxAttachmentName) {
-      await testInfo.attach(searchboxAttachmentName, {
-        body: await this.header().screenshot(),
-        contentType: 'image/png'
-      });
-    }
-    await searchInput.press('Enter');
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.headerComponent().search(productName, productListUrl, testInfo, searchboxAttachmentName);
   }
 
   async attachHeaderSearchScreenshot(testInfo: TestInfo | undefined, attachmentName: string): Promise<void> {
-    if (!testInfo) {
-      return;
-    }
-
-    await this.focusHeaderSearchForReport();
-    await testInfo.attach(attachmentName, {
-      body: await this.header().screenshot(),
-      contentType: 'image/png'
-    });
+    await this.headerComponent().attachSearchScreenshot(testInfo, attachmentName);
   }
 
   async focusHeaderSearchForReport(): Promise<void> {
-    await this.page.evaluate(() => window.scrollTo(0, 0));
-    await expect(this.header(), 'Header should be visible before capturing search report').toBeVisible();
-    await expect(this.headerSearchInput(), 'Header searchbox should be visible before capturing search report').toBeVisible();
-    await this.headerSearchInput().click();
+    await this.headerComponent().focusSearchForReport();
   }
 
   async expectNoSearchResult(productName: string): Promise<void> {
@@ -220,8 +218,7 @@ export class StorePage extends BasePage {
       throw new Error('First product detail link should have an href.');
     }
 
-    await this.page.goto(href);
-    await this.page.waitForLoadState('domcontentloaded');
+    await gotoAndAssertPageAvailable(this.page, href, 'Product detail page');
   }
 
   async expectProductDetailVisible(): Promise<void> {
@@ -230,7 +227,7 @@ export class StorePage extends BasePage {
   }
 
   async expectCartBadgeVisible(): Promise<void> {
-    await expect(this.page.locator('a.btn-cart:visible, a[href*="shoppingCart"]:visible').first(), 'Cart badge/link should be visible').toContainText(/[1-9]/);
+    await this.cartBadgeComponent().expectHasItems();
   }
 
   async addProductToCart(productName: string): Promise<void> {
@@ -240,18 +237,12 @@ export class StorePage extends BasePage {
 
     if (await detailAddButton.isVisible().catch(() => false)) {
       if (!(await detailAddButton.isEnabled().catch(() => true))) {
-        await expect(
-          this.cartBadgeWithItems(),
-          'Cart badge should already show items when product detail add button is disabled'
-        ).toBeVisible();
+        await this.cartBadgeComponent().expectHasItems('Cart badge should already show items when product detail add button is disabled');
         return;
       }
 
       await detailAddButton.click();
-      await expect(
-        this.cartBadgeWithItems(),
-        'Cart count should show at least 1 item after adding product from detail page'
-      ).toContainText(/[1-9]/);
+      await this.cartBadgeComponent().expectHasItems('Cart count should show at least 1 item after adding product from detail page');
       return;
     }
 
@@ -262,10 +253,7 @@ export class StorePage extends BasePage {
 
     if (await addButton.isVisible().catch(() => false)) {
       await addButton.click();
-      await expect(
-        this.cartBadgeWithItems(),
-        'Cart count should show at least 1 item after adding product from product card'
-      ).toContainText(/[1-9]/);
+      await this.cartBadgeComponent().expectHasItems('Cart count should show at least 1 item after adding product from product card');
       return;
     }
 
@@ -275,25 +263,12 @@ export class StorePage extends BasePage {
       .first()
       .click();
 
-    await expect(
-      this.cartBadgeWithItems(),
-      'Cart count should show at least 1 item after clicking icon add-to-cart'
-    ).toContainText(/[1-9]/);
+    await this.cartBadgeComponent().expectHasItems('Cart count should show at least 1 item after clicking icon add-to-cart');
   }
 
   // Điều hướng sang trang giỏ hàng.
   async goToCart(): Promise<void> {
-    const cartLink = this.page
-      .getByRole('link', { name: /giỏ hàng|cart/i })
-      .or(this.page.getByRole('button', { name: /giỏ hàng|cart/i }))
-      .first();
-
-    if (await cartLink.isVisible().catch(() => false)) {
-      await cartLink.click();
-    } else {
-      await this.page.goto(urls.cart);
-    }
-
+    await this.cartBadgeComponent().openCart(urls.cart);
     await expect(this.page, 'Page URL should match cart URL after navigating to cart').toHaveURL(new RegExp(urls.cart, 'i'));
   }
 
@@ -315,44 +290,16 @@ export class StorePage extends BasePage {
       .first();
   }
 
-  private header(): Locator {
-    return this.page.locator('header, nav, .header, #header, [role="banner"]').first();
+  private headerComponent(): HeaderComponent {
+    return new HeaderComponent(this.page);
   }
 
-  private footer(): Locator {
-    return this.page.locator('footer, .footer, [role="contentinfo"]').first();
+  private footerComponent(): FooterComponent {
+    return new FooterComponent(this.page);
   }
 
-  private headerLogo(): Locator {
-    return this.page
-      .getByRole('link', { name: /brandLogo|logo/i })
-      .or(this.page.locator('img[alt*="logo" i], header img, nav img').first())
-      .first();
-  }
-
-  private cartEntry(): Locator {
-    return this.page
-      .getByRole('link', { name: /giỏ hàng|cart/i })
-      .or(this.page.locator('a[href*="shoppingCart"], a.btn-cart'))
-      .first();
-  }
-
-  private cartBadgeWithItems(): Locator {
-    return this.page.locator('a.btn-cart:visible, a[href*="shoppingCart"]:visible').filter({ hasText: /[1-9]/ }).first();
-  }
-
-  private loginOrUserEntry(): Locator {
-    return this.page
-      .locator('a[href*="/user/profile"]:visible, #usercol:visible, #user-col:visible, .header-block--user:visible')
-      .or(this.page.getByRole('link', { name: /đăng nhập|login|tôi|profile/i }))
-      .or(this.page.getByRole('button', { name: /đăng nhập|login|tôi|profile/i }))
-      .first();
-  }
-
-  private headerSearchInput(): Locator {
-    return this.page
-      .locator('header input[placeholder]:visible, nav input[placeholder]:visible, input[placeholder]:visible')
-      .first();
+  private cartBadgeComponent(): CartBadgeComponent {
+    return new CartBadgeComponent(this.page);
   }
 
   private priceFromInput(): Locator {
@@ -369,6 +316,49 @@ export class StorePage extends BasePage {
 
   private lowestPriceSortButton(): Locator {
     return this.page.getByRole('button', { name: /^giá thấp$/i }).first();
+  }
+
+  private homeBannerSlider(): Locator {
+    return this.page
+      .locator('.slick-slider:visible, .swiper:visible, .carousel:visible, [class*="banner" i]:visible')
+      .filter({ has: this.page.locator('img:visible') })
+      .first();
+  }
+
+  private homeBannerImage(): Locator {
+    return this.homeBannerSlider().locator('img:visible').first();
+  }
+
+  private homeSliderNavigation(): Locator {
+    return this.page
+      .getByRole('button', { name: /previous|next/i })
+      .or(this.page.locator('.slick-prev:visible, .slick-next:visible, .swiper-button-prev:visible, .swiper-button-next:visible'))
+      .first();
+  }
+
+  private homeCategoryNavigation(): Locator {
+    return this.page
+      .getByRole('button', { name: /nhãn hiệu|sản phẩm|khuyến mãi|mã ưu đãi|htpp/i })
+      .or(this.page.getByRole('link', { name: /nhãn hiệu|sản phẩm|khuyến mãi|mã ưu đãi|htpp/i }))
+      // TODO: Replace CSS fallback after inspecting stable category DOM on Day Sales.
+      .or(this.page.locator('nav button:visible, header button:visible, .menu-category:visible'))
+      .first();
+  }
+
+  private async visibleHomeCategoryCount(): Promise<number> {
+    return await this.page
+      .getByRole('button', { name: /nhãn hiệu|htpp|sản phẩm|khuyến mãi|mã ưu đãi/i })
+      .or(this.page.getByRole('link', { name: /nhãn hiệu|htpp|sản phẩm|khuyến mãi|mã ưu đãi/i }))
+      .or(this.page.locator('nav button:visible, header button:visible, .menu-category:visible'))
+      .count();
+  }
+
+  private homePromotionSignal(): Locator {
+    return this.page
+      .getByRole('button', { name: /áp dụng/i })
+      .or(this.page.getByText(/free ship|giảm|khuyến mãi|sale/i))
+      .or(this.page.locator('.coupon:visible, .voucher:visible, [class*="promotion" i]:visible, [class*="coupon" i]:visible'))
+      .first();
   }
 
   private productListSignal(): Locator {
