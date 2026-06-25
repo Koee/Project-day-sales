@@ -9,7 +9,7 @@ test.describe('Checkout', () => {
   });
 
   // Kiểm tra flow đặt hàng thành công với user đã đăng nhập.
-  test('TC-LOGIN-ORDER-001 should place order successfully when logged-in user completes checkout flow @smoke @checkout @auth', async ({ page }) => {
+  test('TC-LOGIN-ORDER-001 should place order successfully when logged-in user completes checkout flow @smoke @checkout @auth @auth-state', async ({ page }) => {
     await muaHangCoLogin(page);
   });
 });

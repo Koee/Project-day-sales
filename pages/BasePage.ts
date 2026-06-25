@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { gotoAndAssertPageAvailable } from '../utils/page-availability.helper';
 import { waitForPageReady } from '../utils/wait.helper';
 
 export abstract class BasePage {
@@ -9,9 +10,9 @@ export abstract class BasePage {
     this.page = page;
   }
 
-  // Điều hướng tới đường dẫn và chờ trang sẵn sàng để tương tác.
+  // Điều hướng và dừng sớm nếu trang trả lỗi availability.
   protected async goto(path: string): Promise<void> {
-    await this.page.goto(path);
+    await gotoAndAssertPageAvailable(this.page, path, path);
     await waitForPageReady(this.page);
   }
 }

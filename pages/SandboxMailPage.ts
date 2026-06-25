@@ -1,5 +1,6 @@
 import { expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { env } from '../config/env';
+import { gotoAndAssertPageAvailable } from '../utils/page-availability.helper';
 
 export class SandboxMailPage {
   private readonly page: Page;
@@ -10,8 +11,7 @@ export class SandboxMailPage {
 
   static async open(context: BrowserContext): Promise<SandboxMailPage> {
     const page = await context.newPage();
-    await page.goto(env.sandboxMailURL);
-    await page.waitForLoadState('domcontentloaded');
+    await gotoAndAssertPageAvailable(page, env.sandboxMailURL, 'Sandbox mail page');
     return new SandboxMailPage(page);
   }
 

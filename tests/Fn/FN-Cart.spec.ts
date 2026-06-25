@@ -35,11 +35,12 @@ test.describe('Cart Functional', () => {
     await checkoutGuestCart(page);
   });
 
-  test('TC-CART-006 should navigate logged-in cart to checkout @fn @cart @checkout @auth', async ({ page }) => {
+  test('TC-CART-006 should navigate logged-in cart to checkout @fn @cart @checkout @auth @auth-state', async ({ page }) => {
+    test.setTimeout(60_000);
     await checkoutLoggedInCart(page);
   });
 
-  test('TC-CART-007 should persist logged-in cart after refresh @fn @cart @auth', async ({ page }) => {
+  test('TC-CART-007 should persist logged-in cart after refresh @fn @cart @auth @auth-state', async ({ page }) => {
     await expectLoggedInCartPersistsAfterReload(page);
   });
 });

@@ -8,7 +8,18 @@ export type DeliveryAddress = {
 };
 
 export const products = {
-  chaCaKg: 'Chả cá KG'
+  chaCaKg: 'Chả cá KG',
+  chaCaKgWithoutAccents: 'Cha ca KG'
+} as const;
+
+export const searchKeywords = {
+  specialCharacters: '!@#$%^&*()_+-=[]{}'
+} as const;
+
+export const storeFilters = {
+  chaCaCategoryId: '2520',
+  priceFrom: '1',
+  priceTo: '100000'
 } as const;
 
 export const oauthInvalidCredentials = {
@@ -16,9 +27,21 @@ export const oauthInvalidCredentials = {
     username: process.env.LOGIN_EMAIL ?? '1@yo.co',
     password: 'Wrong!@#123'
   },
+  emptyEmail: {
+    username: '',
+    password: process.env.LOGIN_PASSWORD ?? '12345678'
+  },
   emptyPassword: {
     username: process.env.LOGIN_EMAIL ?? '1@yo.co',
     password: ''
+  },
+  invalidEmailFormat: {
+    username: 'not-an-email',
+    password: 'P@ssw0rd!123'
+  },
+  emailWithSurroundingWhitespace: {
+    username: ` ${process.env.LOGIN_EMAIL ?? '1@yo.co'} `,
+    password: process.env.LOGIN_PASSWORD ?? '12345678'
   },
   unknownUser: {
     username: 'notexist@test.vn',
@@ -32,6 +55,10 @@ export const oauthInvalidCredentials = {
     username: "<script>alert('xss')</script>",
     password: 'P@ssw0rd!123'
   }
+} as const;
+
+export const oauthForgotPasswordData = {
+  invalidEmailFormat: 'not-an-email'
 } as const;
 
 const registrationSuffix = Date.now();

@@ -3,6 +3,10 @@ import { expectCartLayout } from '../../steps/cart.steps';
 import { expectCheckoutLayout } from '../../steps/checkout.steps';
 import {
   expectStoreHeader,
+  expectStoreFooter,
+  expectStoreHomeBannerSlider,
+  expectStoreHomeCategories,
+  expectStoreHomePromotedProducts,
   expectStoreLayout,
   expectStoreMobileLayout,
   expectStoreProductCard,
@@ -19,12 +23,28 @@ test.describe('Store UI', () => {
     await expectStoreLayout(page);
   });
 
+  test('TC-TH-001 should show home banner slider @ui @store @home', async ({ page }, testInfo) => {
+    await expectStoreHomeBannerSlider(page, testInfo);
+  });
+
+  test('TC-TH-002 should show home product categories @ui @store @home', async ({ page }, testInfo) => {
+    await expectStoreHomeCategories(page, testInfo);
+  });
+
+  test('TC-TH-003 should show home promoted products @ui @store @home', async ({ page }, testInfo) => {
+    await expectStoreHomePromotedProducts(page, testInfo);
+  });
+
   test('TC-UI-002 should show store header elements @ui @store', async ({ page }) => {
     await expectStoreHeader(page);
   });
 
-  test('TC-UI-003 should render store responsively on mobile viewport @ui @store @mobile', async ({ page }) => {
-    await expectStoreMobileLayout(page);
+  test('TC-TH-005 should show store footer UI @ui @store @footer', async ({ page }) => {
+    await expectStoreFooter(page);
+  });
+
+  test('TC-UI-003 should render store responsively on mobile viewport @ui @store @mobile', async ({ page }, testInfo) => {
+    await expectStoreMobileLayout(page, testInfo);
   });
 
   test('TC-UI-004 should show product card information @ui @store @product', async ({ page }) => {

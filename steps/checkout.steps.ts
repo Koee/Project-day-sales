@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createGuestDeliveryAddress, products } from '../fixtures/test-data';
 import { CartPage } from '../pages/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage';
@@ -30,7 +30,7 @@ export async function muaHangKhongLogin(page: Page): Promise<void> {
 export async function dangNhapE2E(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);
 
-  await loginPage.loginWithConfiguredAccount();
+  await loginPage.expectAuthenticatedHeaderVisible();
 }
 
 // Thực hiện flow mua hàng sau khi người dùng đã đăng nhập.
@@ -84,10 +84,9 @@ export async function placeOrderWithMissingRequiredPhone(page: Page): Promise<vo
   const guestDeliveryAddress = createGuestDeliveryAddress();
 
   await openCheckoutWithGuestCart(page);
-  test.skip(
-    !(await checkoutPage.placeOrderWithMissingPhoneAndExpectValidation(guestDeliveryAddress)),
-    'Checkout address form is not available to verify missing phone validation.'
-  );
+  if (!(await checkoutPage.placeOrderWithMissingPhoneAndExpectValidation(guestDeliveryAddress))) {
+    throw new Error('Checkout address form is not available to verify missing phone validation.');
+  }
 }
 
 export async function expectCheckoutSummaryMatchesCart(page: Page): Promise<void> {
@@ -102,7 +101,9 @@ export async function goBackToCartFromCheckout(page: Page): Promise<void> {
   const checkoutPage = new CheckoutPage(page);
 
   await openCheckoutWithGuestCart(page);
-  test.skip(!(await checkoutPage.goBackToCart()), 'Checkout does not expose a visible back-to-cart control.');
+  if (!(await checkoutPage.goBackToCart())) {
+    throw new Error('Checkout does not expose a visible back-to-cart control.');
+  }
 }
 
 export async function expectInvalidCheckoutPhone(page: Page): Promise<void> {
@@ -110,8 +111,7 @@ export async function expectInvalidCheckoutPhone(page: Page): Promise<void> {
   const guestDeliveryAddress = createGuestDeliveryAddress();
 
   await openCheckoutWithGuestCart(page);
-  test.skip(
-    !(await checkoutPage.expectInvalidPhoneValidation(guestDeliveryAddress, 'abcxyz')),
-    'Checkout address form is not available to verify invalid phone validation.'
-  );
+  if (!(await checkoutPage.expectInvalidPhoneValidation(guestDeliveryAddress, 'abcxyz'))) {
+    throw new Error('Checkout address form is not available to verify invalid phone validation.');
+  }
 }

@@ -17,6 +17,7 @@
     "steps/**/*.ts",
     "tests/**/*.ts",
     "utils/**/*.ts",
+    "global-setup.ts",
     "playwright.config.ts"
   ]
 }

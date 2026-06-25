@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { products } from '../fixtures/test-data';
 import { CartPage } from '../pages/CartPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -20,16 +20,18 @@ export async function expectCartEmptyOrItems(page: Page): Promise<void> {
 
 export async function prepareGuestCart(page: Page): Promise<void> {
   const storePage = new StorePage(page);
+  const cartPage = new CartPage(page);
 
   await storePage.openProductWithSalesChannel();
   await storePage.addProductToCart(products.chaCaKg);
   await storePage.goToCart();
+  await cartPage.waitForProductInCart(products.chaCaKg);
 }
 
 export async function prepareLoggedInCart(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);
 
-  await loginPage.loginWithConfiguredAccount();
+  await loginPage.expectAuthenticatedHeaderVisible();
   await prepareGuestCart(page);
 }
 
@@ -37,21 +39,27 @@ export async function increaseCartQuantity(page: Page): Promise<void> {
   const cartPage = new CartPage(page);
 
   await prepareGuestCart(page);
-  test.skip(!(await cartPage.increaseFirstItemQuantity()), 'Quantity increase control is not available for current cart item.');
+  if (!(await cartPage.increaseProductQuantity(products.chaCaKg))) {
+    throw new Error('Quantity increase control is not available for current cart item.');
+  }
 }
 
 export async function removeCartItem(page: Page): Promise<void> {
   const cartPage = new CartPage(page);
 
   await prepareGuestCart(page);
-  test.skip(!(await cartPage.removeFirstItem()), 'Remove item control is not available for current cart item.');
+  if (!(await cartPage.removeProduct(products.chaCaKg))) {
+    throw new Error('Remove item control is not available for current cart item.');
+  }
 }
 
 export async function expectCartTotal(page: Page): Promise<void> {
   const cartPage = new CartPage(page);
 
   await prepareGuestCart(page);
-  test.skip(!(await cartPage.expectTotalMatchesItems()), 'Cart total is not visible for current cart state.');
+  if (!(await cartPage.expectSelectedTotalForProduct(products.chaCaKg))) {
+    throw new Error('Cart total is not visible for current cart state.');
+  }
 }
 
 export async function checkoutGuestCart(page: Page): Promise<void> {
@@ -74,5 +82,7 @@ export async function expectLoggedInCartPersistsAfterReload(page: Page): Promise
   const cartPage = new CartPage(page);
 
   await prepareLoggedInCart(page);
-  test.skip(!(await cartPage.expectCartPersistsAfterReload()), 'Cart item is not available to verify persistence after reload.');
+  if (!(await cartPage.expectProductPersistsAfterReload(products.chaCaKg))) {
+    throw new Error('Cart item is not available to verify persistence after reload.');
+  }
 }

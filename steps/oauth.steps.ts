@@ -1,12 +1,13 @@
 import { expect, type BrowserContext, type Page } from '@playwright/test';
 import { env } from '../config/env';
 import { urls } from '../config/urls';
-import { oauthRegistrationData } from '../fixtures/test-data';
+import { oauthForgotPasswordData, oauthRegistrationData } from '../fixtures/test-data';
 import { KeycloakForgotPasswordPage } from '../pages/KeycloakForgotPasswordPage';
 import { KeycloakLoginPage, type OAuthCredentials } from '../pages/KeycloakLoginPage';
 import { KeycloakRegisterPage } from '../pages/KeycloakRegisterPage';
 import { LoginPage } from '../pages/LoginPage';
 import { SandboxMailPage } from '../pages/SandboxMailPage';
+import { gotoAndAssertPageAvailable } from '../utils/page-availability.helper';
 
 export async function openKeycloakLogin(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);
@@ -50,8 +51,19 @@ export async function loginWithCredentials(page: Page, credentials: OAuthCredent
   }
 }
 
+export async function loginWithCredentialsAndExpectAuthenticated(page: Page, credentials: OAuthCredentials): Promise<void> {
+  const keycloakLoginPage = new KeycloakLoginPage(page);
+
+  await keycloakLoginPage.login(credentials);
+  await expect(
+    page,
+    'OAuth login with accepted credentials should leave Keycloak and return to Day Sales'
+  ).not.toHaveURL(/keycloak-staging\.timdaythay\.com/i);
+  await expectAuthenticatedHeader(page);
+}
+
 export async function openProtectedCheckoutWithoutLogin(page: Page): Promise<void> {
-  await page.goto(urls.checkout);
+  await gotoAndAssertPageAvailable(page, urls.checkout, 'Protected checkout page');
   await expect(page, 'Direct checkout without products should open the cart page').toHaveURL(new RegExp(urls.cart, 'i'));
 
   const cartItem = page.locator('.cart__item').first();
@@ -95,21 +107,26 @@ export async function logoutConfiguredAccount(page: Page): Promise<void> {
 }
 
 export async function loginAndOpenKeycloakLoginAgain(page: Page): Promise<void> {
-  if (!env.keycloakLoginURL) {
-    throw new Error('KEYCLOAK_LOGIN_URL must be set in config/.env before running direct-login-with-session tests.');
-  }
+  const keycloakLoginURL = env.keycloakLoginURL || await captureKeycloakLoginURL(page);
 
   await loginWithConfiguredAccount(page);
-  await page.goto(env.keycloakLoginURL);
+  await gotoAndAssertPageAvailable(page, keycloakLoginURL, 'Keycloak login page');
   await expect(
     page,
     'Opening login URL with an existing session should redirect/recover instead of asking for credentials again'
   ).not.toHaveURL(/login-actions\/authenticate/i);
 }
 
+async function captureKeycloakLoginURL(page: Page): Promise<string> {
+  await openKeycloakLogin(page);
+  await expect(page, 'Generated login URL should open Keycloak before session reuse check').toHaveURL(/keycloak-staging\.timdaythay\.com/i);
+
+  return page.url();
+}
+
 export async function openKeycloakRegistration(page: Page): Promise<void> {
   if (env.keycloakRegisterURL) {
-    await page.goto(env.keycloakRegisterURL);
+    await gotoAndAssertPageAvailable(page, env.keycloakRegisterURL, 'Keycloak registration page');
     return;
   }
 
@@ -139,13 +156,13 @@ export async function registerWithValidDataThroughCaptcha(page: Page): Promise<v
   const keycloakRegisterPage = new KeycloakRegisterPage(page);
   const suffix = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
 
-  await keycloakRegisterPage.registerThroughCaptcha({
+  await keycloakRegisterPage.fillValidRegistrationData({
     username: `valid_${suffix}`.slice(0, 50),
     email: `valid_${suffix}@example.test`,
     password: 'Test@1234',
     confirmPassword: 'Test@1234'
   });
-  await keycloakRegisterPage.expectRegistrationSuccessPopup();
+  await keycloakRegisterPage.expectCaptchaGateVisible();
 }
 
 export async function submitEmptyRegistrationForm(page: Page): Promise<void> {
@@ -184,10 +201,15 @@ export async function registerWithWeakPassword(page: Page): Promise<void> {
 
 export async function openKeycloakForgotPassword(page: Page): Promise<void> {
   if (env.keycloakForgotPasswordURL) {
-    await page.goto(env.keycloakForgotPasswordURL);
+    await gotoAndAssertPageAvailable(page, env.keycloakForgotPasswordURL, 'Keycloak forgot password page');
     return;
   }
 
+  await openKeycloakLogin(page);
+  await new KeycloakLoginPage(page).openForgotPassword();
+}
+
+export async function openForgotPasswordFromLoginPage(page: Page): Promise<void> {
   await openKeycloakLogin(page);
   await new KeycloakLoginPage(page).openForgotPassword();
 }
@@ -202,6 +224,12 @@ export async function submitEmptyForgotPasswordForm(page: Page): Promise<void> {
   const forgotPasswordPage = new KeycloakForgotPasswordPage(page);
 
   await forgotPasswordPage.submitEmpty();
+}
+
+export async function submitInvalidForgotPasswordEmail(page: Page): Promise<void> {
+  const forgotPasswordPage = new KeycloakForgotPasswordPage(page);
+
+  await forgotPasswordPage.submitInvalidEmail(oauthForgotPasswordData.invalidEmailFormat);
 }
 
 export async function requestPasswordResetForConfiguredAccount(page: Page): Promise<void> {
