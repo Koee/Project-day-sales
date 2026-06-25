@@ -242,7 +242,10 @@ export class CheckoutPage extends BasePage {
 
   // Lấy thông báo đặt hàng thành công.
   private orderSuccessMessage(): Locator {
-    return this.page.getByText(/đặt hàng.*thành công|thành công/i).first();
+    return this.page
+      .locator('.modal-content:visible, .modal-dialog:visible, [role="dialog"]:visible')
+      .filter({ hasText: /đặt hàng.*thành công|thành công/i })
+      .last();
   }
 
   // Lấy ô nhập text của từng trường địa chỉ theo locator ưu tiên.
